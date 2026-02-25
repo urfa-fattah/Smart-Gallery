@@ -3,132 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Smart Gallery · Hidden Vault + Audio</title>
+  <title>Nova Gallery · Imperial Edition</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="theme-color" content="#7e5bef">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon.png">
   
-  <!-- Tailwind + Inter + Font Awesome -->
+  <!-- Tailwind + Inter + Font Awesome (development warnings are normal) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   
   <!-- React & ReactDOM (UMD) -->
   <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
   
-  <!-- Babel Standalone for JSX -->
+  <!-- Babel Standalone for JSX (development only) -->
   <script src="https://unpkg.com/@babel/standalone@7.22.5/babel.min.js"></script>
   
   <style>
-    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background: #faf8f5; }
+    .dark body { background: #0c0a1a; }
     
-    /* 🔷 SOLID GLASS – NO TRANSFERENCE */
-    .glass-nav { 
-      background: rgba(255,255,255,0.92); 
-      backdrop-filter: blur(10px); 
-      border-bottom: 1px solid rgba(0,0,0,0.06); 
-      box-shadow: 0 4px 20px -6px rgba(0,0,0,0.02);
-    }
-    .dark .glass-nav { 
-      background: rgba(15,23,42,0.92); 
-      border-bottom: 1px solid rgba(255,255,255,0.06); 
-    }
+    /* 👑 ROYAL GLASS */
+    .glass-nav { background: rgba(255,245,235,0.75); backdrop-filter: blur(12px) saturate(180%); border-bottom: 1px solid rgba(255,215,0,0.2); }
+    .dark .glass-nav { background: rgba(20,10,30,0.85); border-bottom: 1px solid rgba(255,215,0,0.15); }
     
-    .glass-modal {
-      background: rgba(255,255,255,0.96);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.4);
-      box-shadow: 0 20px 35px -8px rgba(0,0,0,0.15);
-    }
-    .dark .glass-modal {
-      background: rgba(15,23,42,0.96);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
+    .glass-modal { background: rgba(255,245,240,0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,215,0,0.3); box-shadow: 0 30px 50px -20px rgba(106,13,173,0.4); }
+    .dark .glass-modal { background: rgba(26,18,38,0.95); border: 1px solid rgba(255,215,0,0.15); }
 
-    .glass-card { 
-      background: rgba(255,255,255,0.85); 
-      backdrop-filter: blur(12px); 
-      border: 1px solid rgba(255,255,255,0.3); 
-    }
-    .dark .glass-card { 
-      background: rgba(15,23,42,0.85); 
-      border: 1px solid rgba(255,255,255,0.05); 
-    }
+    .glass-card { background: rgba(255,250,240,0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,215,0,0.25); }
+    .dark .glass-card { background: rgba(30,20,45,0.7); border: 1px solid rgba(255,215,0,0.1); }
     
-    .img-loading { opacity: 0; transform: scale(1.05); filter: blur(10px); }
-    .img-loaded { opacity: 1; transform: scale(1); filter: blur(0); transition: all 0.7s cubic-bezier(0.4,0,0.2,1); }
-    .animate-enter { animation: fadeSlideUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
-    @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    /* image load animation */
+    .img-loading { opacity: 0; transform: scale(1.08); filter: blur(15px); }
+    .img-loaded { opacity: 1; transform: scale(1); filter: blur(0); transition: all 0.7s cubic-bezier(0.2,0,0,1); }
     
-    /* Progress bar for slideshow */
+    .animate-enter { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+    @keyframes fadeUp { 0% { opacity: 0; transform: translateY(16px); } 100% { opacity: 1; transform: translateY(0); } }
+    
+    /* progress bar for slideshow */
     @keyframes progress { from { width: 0%; } to { width: 100%; } }
     .animate-progress { animation: progress 3s linear forwards; }
     
-    /* Zoom & pan container */
-    .zoom-container {
-      cursor: grab;
-      transition: transform 0.1s ease;
-    }
+    /* zoom container */
+    .zoom-container { cursor: grab; transition: transform 0.1s ease; transform-origin: center center; }
     .zoom-container.dragging { cursor: grabbing; }
-    .zoom-content {
-      transform-origin: center center;
-      will-change: transform;
-    }
     
-    ::-webkit-scrollbar { width: 6px; }
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+    ::-webkit-scrollbar-thumb { background: #c1a57b; border-radius: 10px; }
+    .dark ::-webkit-scrollbar-thumb { background: #5e4b3c; }
     
-    .favorites-zone { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.5rem; }
-    .favorites-zone .fav-item { flex: 0 0 120px; scroll-snap-align: start; }
-    @media (min-width: 640px) { .favorites-zone .fav-item { flex-basis: 150px; } }
+    /* favorites zone */
+    .favorites-zone { display: flex; gap: 0.75rem; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 0.5rem; }
+    .favorites-zone .fav-item { flex: 0 0 110px; scroll-snap-align: start; }
+    @media (min-width: 640px) { .favorites-zone .fav-item { flex-basis: 140px; } }
     
-    .backup-code { font-family: monospace; background: rgba(59,130,246,0.1); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    /* premium video controls */
+    .video-controls { background: linear-gradient(to top, rgba(60,20,80,0.9), transparent); transition: opacity 0.3s; }
+    .video-progress { -webkit-appearance: none; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; background-image: linear-gradient(90deg, #c084fc var(--value, 0%), transparent 0%); }
+    .video-progress::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: white; border: 2px solid #c084fc; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 8px black; transition: transform 0.1s; }
+    .video-progress::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    .volume-slider { -webkit-appearance: none; width: 70px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+    .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #c084fc; border-radius: 50%; cursor: pointer; }
     
-    .photo-action-btn {
-      opacity: 0.8;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .photo-action-btn:hover {
-      opacity: 1;
-      transform: scale(1.05);
-    }
-
-    /* Audio player */
-    .audio-player {
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(12px);
-      border-top: 1px solid rgba(0,0,0,0.1);
-    }
-    .dark .audio-player {
-      background: rgba(15,23,42,0.9);
-      border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .audio-progress {
-      -webkit-appearance: none;
-      height: 4px;
-      background: #e2e8f0;
-      border-radius: 2px;
-    }
-    .audio-progress::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 12px;
-      height: 12px;
-      background: #3b82f6;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    .dark .audio-progress {
-      background: #334155;
-    }
+    /* audio player */
+    .audio-player { background: rgba(255,245,235,0.9); backdrop-filter: blur(16px); border-top: 1px solid rgba(212,175,55,0.3); }
+    .dark .audio-player { background: rgba(30,20,40,0.9); border-top: 1px solid rgba(212,175,55,0.2); }
+    .audio-progress { -webkit-appearance: none; height: 6px; background: #e2d9c0; border-radius: 3px; background-image: linear-gradient(90deg, #c084fc var(--progress, 0%), #e2d9c0 0%); }
+    .audio-progress::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: white; border: 2px solid #c084fc; border-radius: 50%; cursor: pointer; }
+    .dark .audio-progress { background: #4a3f33; }
+    
+    /* tooltip */
+    .tooltip { position: relative; }
+    .tooltip:hover:after { content: attr(aria-label); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #2d1b3c; color: #ffd700; font-size: 10px; padding: 4px 8px; border-radius: 20px; white-space: nowrap; pointer-events: none; margin-bottom: 6px; z-index: 100; border: 1px solid #ffd70033; }
+    
+    /* selection mode */
+    .selection-mode .selectable { @apply ring-2 ring-offset-2 ring-amber-400; }
+    .selected-item { @apply ring-4 ring-amber-500 ring-offset-2; }
+    .bulk-toolbar { background: linear-gradient(135deg, #2e1b4b, #1a0f2b); border: 1px solid #ffd70040; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-500">
+<body class="bg-amber-50/50 text-stone-900 dark:bg-[#0c0a1a] dark:text-amber-100 transition-colors duration-500">
   <div id="root" class="flex flex-col min-h-screen"></div>
 
   <script>
@@ -144,10 +103,10 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback, useRef, createContext, useContext, useMemo } = React;
 
-    // ---------- INDEXED DB – FIX FOR QUOTA & PERSISTENCE ----------
-    const DB_NAME = 'SmartGalleryDB';
-    const DB_VERSION = 3; // increased for audio store
-    const STORE_IMAGES = 'uploadedImages';
+    // ---------- INDEXED DB ----------
+    const DB_NAME = 'NovaGalleryDB';
+    const DB_VERSION = 6;
+    const STORE_MEDIA = 'uploadedMedia';
     const STORE_THUMBS = 'uploadedThumbnails';
     const STORE_AUDIO = 'uploadedAudio';
 
@@ -158,15 +117,9 @@
         request.onsuccess = () => resolve(request.result);
         request.onupgradeneeded = (e) => {
           const db = e.target.result;
-          if (!db.objectStoreNames.contains(STORE_IMAGES)) {
-            db.createObjectStore(STORE_IMAGES, { keyPath: 'filename' });
-          }
-          if (!db.objectStoreNames.contains(STORE_THUMBS)) {
-            db.createObjectStore(STORE_THUMBS, { keyPath: 'album' });
-          }
-          if (!db.objectStoreNames.contains(STORE_AUDIO)) {
-            db.createObjectStore(STORE_AUDIO, { keyPath: 'filename' });
-          }
+          if (!db.objectStoreNames.contains(STORE_MEDIA)) db.createObjectStore(STORE_MEDIA, { keyPath: 'filename' });
+          if (!db.objectStoreNames.contains(STORE_THUMBS)) db.createObjectStore(STORE_THUMBS, { keyPath: 'album' });
+          if (!db.objectStoreNames.contains(STORE_AUDIO)) db.createObjectStore(STORE_AUDIO, { keyPath: 'id' });
         };
       });
     }
@@ -205,10 +158,9 @@
       });
     }
 
-    // audio helpers
     const getAllAudio = () => getAllFromStore(STORE_AUDIO);
     const putAudio = (audio) => putItemInStore(STORE_AUDIO, audio);
-    const removeAudio = (filename) => removeItemFromStore(STORE_AUDIO, filename);
+    const removeAudio = (id) => removeItemFromStore(STORE_AUDIO, id);
 
     // ---------- UTILS ----------
     const PATH_TO_IMAGES = 'images/';
@@ -222,15 +174,6 @@
       return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    function readFileAsArrayBuffer(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-      });
-    }
-
     function readFileAsDataURL(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -240,52 +183,65 @@
       });
     }
 
-    // ---------- GLOBAL APP CONTEXT ----------
+    function generateVideoThumbnail(file, seekTo = 0.5) {
+      return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        video.onloadeddata = () => { video.currentTime = Math.min(seekTo, video.duration / 2); };
+        video.onseeked = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(blob => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }, 'image/jpeg', 0.8);
+          video.remove();
+        };
+        video.onerror = reject;
+        video.src = URL.createObjectURL(file);
+      });
+    }
+
+    const formatTime = (sec) => isNaN(sec) ? '0:00' : `${Math.floor(sec / 60)}:${Math.floor(sec % 60).toString().padStart(2, '0')}`;
+
+    // ---------- GLOBAL CONTEXT ----------
     const AppContext = createContext();
 
-    // ---------- MAIN APP COMPONENT ----------
+    // ---------- MAIN APP ----------
     function App() {
-      // ----- PERSISTENT STATE -----
+      // persistent state
       const [rawFileList, setRawFileList] = useState([]);
       const [thumbnailMap, setThumbnailMap] = useState({});
-      const [uploadedImages, setUploadedImages] = useState([]);
+      const [uploadedMedia, setUploadedMedia] = useState([]);
       const [uploadedThumbnails, setUploadedThumbnails] = useState({});
-      // FIX: load favorites from localStorage
-      const [favorites, setFavorites] = useState(() => {
-        const stored = localStorage.getItem('sg_favorites');
-        return stored ? new Set(JSON.parse(stored)) : new Set();
-      });
-      const [deletedImages, setDeletedImages] = useState(() => {
-        const stored = localStorage.getItem('sg_deleted_images');
-        return stored ? JSON.parse(stored) : [];
-      });
-      const [hiddenAlbums, setHiddenAlbums] = useState(() => {
-        const stored = localStorage.getItem('sg_hidden_albums');
-        return stored ? JSON.parse(stored) : {};
-      });
-      const [viewSettings, setViewSettings] = useState(() => {
-        const stored = localStorage.getItem('sg_view_settings');
-        return stored ? JSON.parse(stored) : { type: 'masonry', size: 'medium', showInfo: false };
-      });
+      const [favorites, setFavorites] = useState(() => new Set(JSON.parse(localStorage.getItem('sg_favorites') || '[]')));
+      const [deletedMedia, setDeletedMedia] = useState(() => JSON.parse(localStorage.getItem('sg_deleted') || '[]'));
+      const [hiddenAlbums, setHiddenAlbums] = useState(() => JSON.parse(localStorage.getItem('sg_hidden') || '{}'));
+      const [viewSettings, setViewSettings] = useState(() => JSON.parse(localStorage.getItem('sg_view') || '{"type":"masonry","size":"medium","showInfo":false}'));
       const [albumSortOrder, setAlbumSortOrder] = useState('asc');
 
-      // ----- AUDIO STATE -----
+      // audio state
       const [uploadedAudio, setUploadedAudio] = useState([]);
       const audioRef = useRef(null);
-      const [currentAudioFile, setCurrentAudioFile] = useState(null);
+      const [currentAudioId, setCurrentAudioId] = useState(null);
       const [audioPlaying, setAudioPlaying] = useState(false);
       const [audioProgress, setAudioProgress] = useState(0);
       const [audioDuration, setAudioDuration] = useState(0);
       const [audioVolume, setAudioVolume] = useState(1);
+      const [audioLoop, setAudioLoop] = useState(false);
 
-      // ----- HIDDEN PORTAL MASTER PASSWORD -----
-      const [masterPasswordHash, setMasterPasswordHash] = useState(() => localStorage.getItem('sg_master_hash') || null);
+      // master password
+      const [masterPasswordHash, setMasterPasswordHash] = useState(() => localStorage.getItem('sg_master_hash'));
       const [hiddenPortalAuth, setHiddenPortalAuth] = useState(false);
 
-      // ----- DERIVED DATA -----
+      // people data
       const [peopleData, setPeopleData] = useState({});
 
-      // ----- UI STATE -----
+      // UI state
       const [activeView, setActiveView] = useState('people');
       const [activeAlbum, setActiveAlbum] = useState(null);
       const [galleryContext, setGalleryContext] = useState(null);
@@ -293,13 +249,13 @@
       const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
       const [lightboxOpen, setLightboxOpen] = useState(false);
       const [slideshowInterval, setSlideshowInterval] = useState(null);
-      const [greeting, setGreeting] = useState('');
+      const [greeting] = useState('');
 
-      // ----- ZOOM STATE for lightbox -----
+      // zoom
       const [zoomScale, setZoomScale] = useState(1);
       const [zoomTranslate, setZoomTranslate] = useState({ x: 0, y: 0 });
 
-      // ----- MODAL STATES -----
+      // modals
       const [uploadModalOpen, setUploadModalOpen] = useState(false);
       const [hideModalOpen, setHideModalOpen] = useState(false);
       const [albumToHide, setAlbumToHide] = useState(null);
@@ -311,8 +267,16 @@
       const [changeMasterPwModalOpen, setChangeMasterPwModalOpen] = useState(false);
       const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
 
-      // ----- UNLOCKED HIDDEN ALBUMS (session) -----
+      // unlocked hidden
       const [unlockedHidden, setUnlockedHidden] = useState(new Set());
+
+      // gallery search & filters
+      const [gallerySearch, setGallerySearch] = useState('');
+      const [filterType, setFilterType] = useState('all'); // 'all', 'image', 'video'
+
+      // bulk selection
+      const [selectionMode, setSelectionMode] = useState(false);
+      const [selectedItems, setSelectedItems] = useState(new Set());
 
       // ---------- EFFECTS ----------
       useEffect(() => {
@@ -326,11 +290,7 @@
             const thumbMap = await thumbRes.json();
             setRawFileList([...new Set(fileList)]);
             setThumbnailMap(thumbMap);
-          } catch (err) {
-            console.warn('Using empty JSON fallback');
-            setRawFileList([]);
-            setThumbnailMap({});
-          }
+          } catch { setRawFileList([]); setThumbnailMap({}); }
         }
         loadData();
       }, []);
@@ -338,78 +298,37 @@
       useEffect(() => {
         async function loadUploaded() {
           try {
-            const images = await getAllFromStore(STORE_IMAGES);
-            setUploadedImages(images || []);
+            const media = await getAllFromStore(STORE_MEDIA);
+            setUploadedMedia(media || []);
             const thumbs = await getAllFromStore(STORE_THUMBS);
             const thumbObj = {};
             thumbs.forEach(t => thumbObj[t.album] = t.dataURL);
             setUploadedThumbnails(thumbObj);
-
-            // load audio
             const audio = await getAllAudio();
             setUploadedAudio(audio || []);
-          } catch (err) {
-            console.warn('IndexedDB read failed', err);
-            setUploadedImages([]);
-            setUploadedThumbnails({});
-            setUploadedAudio([]);
-          }
+          } catch { setUploadedMedia([]); setUploadedThumbnails({}); setUploadedAudio([]); }
         }
         loadUploaded();
       }, []);
 
-      // save to IndexedDB when uploadedImages change
-      useEffect(() => {
-        uploadedImages.forEach(img => putItemInStore(STORE_IMAGES, img).catch(console.warn));
-      }, [uploadedImages]);
+      useEffect(() => { uploadedMedia.forEach(m => putItemInStore(STORE_MEDIA, m).catch(()=>{})); }, [uploadedMedia]);
+      useEffect(() => { Object.entries(uploadedThumbnails).forEach(([album, dataURL]) => putItemInStore(STORE_THUMBS, { album, dataURL }).catch(()=>{})); }, [uploadedThumbnails]);
+      useEffect(() => { uploadedAudio.forEach(a => putAudio(a).catch(()=>{})); }, [uploadedAudio]);
 
-      useEffect(() => {
-        Object.entries(uploadedThumbnails).forEach(([album, dataURL]) => 
-          putItemInStore(STORE_THUMBS, { album, dataURL }).catch(console.warn)
-        );
-      }, [uploadedThumbnails]);
+      useEffect(() => { localStorage.setItem('sg_favorites', JSON.stringify([...favorites])); }, [favorites]);
+      useEffect(() => { localStorage.setItem('sg_deleted', JSON.stringify(deletedMedia)); }, [deletedMedia]);
+      useEffect(() => { localStorage.setItem('sg_hidden', JSON.stringify(hiddenAlbums)); }, [hiddenAlbums]);
+      useEffect(() => { localStorage.setItem('sg_view', JSON.stringify(viewSettings)); }, [viewSettings]);
+      useEffect(() => { masterPasswordHash ? localStorage.setItem('sg_master_hash', masterPasswordHash) : localStorage.removeItem('sg_master_hash'); }, [masterPasswordHash]);
 
-      // save audio to IndexedDB
-      useEffect(() => {
-        uploadedAudio.forEach(audio => putAudio(audio).catch(console.warn));
-      }, [uploadedAudio]);
-
-      // localStorage saves
-      useEffect(() => {
-        localStorage.setItem('sg_favorites', JSON.stringify([...favorites]));
-      }, [favorites]);
-      useEffect(() => {
-        localStorage.setItem('sg_deleted_images', JSON.stringify(deletedImages));
-      }, [deletedImages]);
-      useEffect(() => {
-        localStorage.setItem('sg_hidden_albums', JSON.stringify(hiddenAlbums));
-      }, [hiddenAlbums]);
-      useEffect(() => {
-        localStorage.setItem('sg_view_settings', JSON.stringify(viewSettings));
-      }, [viewSettings]);
-      useEffect(() => { 
-        if (masterPasswordHash) localStorage.setItem('sg_master_hash', masterPasswordHash);
-        else localStorage.removeItem('sg_master_hash');
-      }, [masterPasswordHash]);
-
-      // cleanup audio on unmount
-      useEffect(() => {
-        return () => {
-          if (audioRef.current) {
-            audioRef.current.pause();
-            URL.revokeObjectURL(audioRef.current.src);
-          }
-        };
-      }, []);
+      useEffect(() => () => { if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src); } }, []);
 
       const effectiveThumbnailMap = useMemo(() => ({ ...thumbnailMap, ...uploadedThumbnails }), [thumbnailMap, uploadedThumbnails]);
 
       useEffect(() => {
         const allFiles = [...rawFileList];
-        const activeUploaded = uploadedImages.filter(img => 
-          !deletedImages.some(d => d.filename === img.filename)
-        );
-        activeUploaded.forEach(img => { if (!allFiles.includes(img.filename)) allFiles.push(img.filename); });
+        const activeMedia = uploadedMedia.filter(m => !deletedMedia.some(d => d.filename === m.filename));
+        activeMedia.forEach(m => { if (!allFiles.includes(m.filename)) allFiles.push(m.filename); });
         const pd = {};
         allFiles.forEach(filename => {
           const cleanFile = filename.trim();
@@ -430,9 +349,9 @@
           });
         });
         setPeopleData(pd);
-      }, [rawFileList, uploadedImages, deletedImages]);
+      }, [rawFileList, uploadedMedia, deletedMedia]);
 
-      // ---------- HELPER FUNCTIONS ----------
+      // ---------- HELPERS ----------
       const showToast = (msg, type = 'success') => {
         setToast({ show: true, msg, type });
         setTimeout(() => setToast({ show: false, msg: '', type: 'success' }), 3000);
@@ -446,157 +365,99 @@
       };
 
       const getAllVisiblePhotos = useCallback(() => {
-        const all = [];
-        rawFileList.forEach(f => all.push(f));
-        uploadedImages.forEach(img => {
-          if (!deletedImages.some(d => d.filename === img.filename) && !all.includes(img.filename)) {
-            all.push(img.filename);
+        const all = [...rawFileList];
+        uploadedMedia.forEach(m => {
+          if (!deletedMedia.some(d => d.filename === m.filename) && !all.includes(m.filename)) {
+            all.push(m.filename);
           }
         });
         return all;
-      }, [rawFileList, uploadedImages, deletedImages]);
+      }, [rawFileList, uploadedMedia, deletedMedia]);
 
       const isAlbumHidden = (name) => !!hiddenAlbums[name];
       const getAlbumPhotoCount = (albumName) => {
         let count = 0;
-        rawFileList.forEach(f => {
-          if (f.startsWith(albumName + '-') || f.startsWith(albumName + '_')) count++;
-        });
-        uploadedImages.forEach(img => {
-          if (img.album === albumName && !deletedImages.some(d => d.filename === img.filename)) count++;
-        });
+        rawFileList.forEach(f => { if (f.startsWith(albumName + '-') || f.startsWith(albumName + '_')) count++; });
+        uploadedMedia.forEach(m => { if (m.album === albumName && !deletedMedia.some(d => d.filename === m.filename)) count++; });
         return count;
       };
 
-      // ---------- FAVORITES ----------
+      // favorites
       const toggleFavorite = (filename) => {
-        setFavorites(prev => {
-          const newSet = new Set(prev);
-          if (newSet.has(filename)) newSet.delete(filename);
-          else newSet.add(filename);
-          return newSet;
-        });
+        setFavorites(prev => { const s = new Set(prev); s.has(filename) ? s.delete(filename) : s.add(filename); return s; });
       };
-
       const openFavoriteLightbox = (filename) => {
         const favs = getAllVisiblePhotos().filter(f => favorites.has(f));
-        if (favs.length === 0) return;
         const index = favs.indexOf(filename);
         if (index === -1) return;
         setActiveAlbum('Favorites');
         setGalleryContext('favorites');
         setCurrentGallery(favs);
         setActiveView('gallery');
-        setTimeout(() => {
-          setCurrentPhotoIndex(index);
-          setLightboxOpen(true);
-        }, 10);
+        setTimeout(() => { setCurrentPhotoIndex(index); setLightboxOpen(true); }, 10);
       };
 
-      // ---------- TRASH ----------
-      const deleteUploadedImage = (filename) => {
-        const img = uploadedImages.find(i => i.filename === filename);
-        if (!img) return;
-        setUploadedImages(prev => prev.filter(i => i.filename !== filename));
-        setDeletedImages(prev => [...prev, { ...img, deletedAt: new Date().toISOString() }]);
+      // trash
+      const deleteUploadedMedia = (filename) => {
+        const media = uploadedMedia.find(i => i.filename === filename);
+        if (!media) return;
+        setUploadedMedia(prev => prev.filter(i => i.filename !== filename));
+        setDeletedMedia(prev => [...prev, { ...media, deletedAt: new Date().toISOString() }]);
         setFavorites(prev => { const s = new Set(prev); s.delete(filename); return s; });
         showToast('Moved to trash');
-        if (currentGallery.includes(filename)) {
-          setCurrentGallery(prev => prev.filter(f => f !== filename));
-        }
+        if (currentGallery.includes(filename)) setCurrentGallery(prev => prev.filter(f => f !== filename));
         if (lightboxOpen && currentGallery[currentPhotoIndex] === filename) closeLightbox();
       };
-
-      const restoreUploadedImage = (filename) => {
-        const img = deletedImages.find(i => i.filename === filename);
-        if (!img) return;
-        setDeletedImages(prev => prev.filter(i => i.filename !== filename));
-        setUploadedImages(prev => [...prev, img]);
-        showToast('Image restored');
+      const restoreUploadedMedia = (filename) => {
+        const media = deletedMedia.find(i => i.filename === filename);
+        if (!media) return;
+        setDeletedMedia(prev => prev.filter(i => i.filename !== filename));
+        setUploadedMedia(prev => [...prev, media]);
+        showToast('Restored');
       };
-
-      const permanentlyDeleteUploadedImage = (filename) => {
-        setDeletedImages(prev => prev.filter(i => i.filename !== filename));
-        removeItemFromStore(STORE_IMAGES, filename).catch(console.warn);
+      const permanentlyDeleteMedia = (filename) => {
+        setDeletedMedia(prev => prev.filter(i => i.filename !== filename));
+        removeItemFromStore(STORE_MEDIA, filename).catch(()=>{});
         showToast('Permanently deleted');
       };
-
       const clearTrash = () => {
-        if (confirm('Permanently delete all items in trash?')) {
-          deletedImages.forEach(img => removeItemFromStore(STORE_IMAGES, img.filename).catch(console.warn));
-          setDeletedImages([]);
+        if (confirm('Empty trash?')) {
+          deletedMedia.forEach(m => removeItemFromStore(STORE_MEDIA, m.filename).catch(()=>{}));
+          setDeletedMedia([]);
           showToast('Trash emptied');
           if (activeAlbum === 'Trash') setCurrentGallery([]);
         }
       };
 
-      // ---------- LIGHTBOX DELETE ----------
-      const deleteCurrentImage = () => {
-        if (currentGallery.length && currentPhotoIndex >= 0) {
-          const filename = currentGallery[currentPhotoIndex];
-          const uploadedImg = uploadedImages.find(i => i.filename === filename);
-          if (uploadedImg && activeAlbum !== 'Trash') {
-            deleteUploadedImage(filename);
-          }
-        }
-      };
-
-      // ---------- HIDDEN ALBUMS & BACKUP CODES ----------
+      // hidden albums
       const generateBackupCodes = () => {
-        const codes = [];
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        for (let i = 0; i < 5; i++) {
-          let code = '';
-          for (let j = 0; j < 8; j++) code += chars[Math.floor(Math.random() * chars.length)];
-          codes.push({ code, used: false });
-        }
-        return codes;
+        return Array.from({ length: 5 }, () => Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''));
       };
-
       const hideAlbum = async (albumName, password, question, answer) => {
         if (isAlbumHidden(albumName)) return false;
         const hashedPassword = await hashString(password);
         const hashedAnswer = await hashString(answer.toLowerCase());
         const codes = generateBackupCodes();
-        setHiddenAlbums(prev => ({
-          ...prev,
-          [albumName]: {
-            password: hashedPassword,
-            question,
-            answer: hashedAnswer,
-            backupCodes: codes,
-            hiddenAt: new Date().toISOString()
-          }
-        }));
+        setHiddenAlbums(prev => ({ ...prev, [albumName]: { password: hashedPassword, question, answer: hashedAnswer, backupCodes: codes, hiddenAt: new Date().toISOString() } }));
         return codes;
       };
-
       const unhideAlbum = (albumName) => {
-        setHiddenAlbums(prev => {
-          const newObj = { ...prev };
-          delete newObj[albumName];
-          return newObj;
-        });
-        setUnlockedHidden(prev => {
-          const s = new Set(prev);
-          s.delete(albumName);
-          return s;
-        });
-        showToast(`Album "${albumName}" is now visible`);
+        setHiddenAlbums(prev => { const { [albumName]: _, ...rest } = prev; return rest; });
+        setUnlockedHidden(prev => { const s = new Set(prev); s.delete(albumName); return s; });
+        showToast(`"${albumName}" is now visible`);
       };
-
       const useBackupCode = (albumName, code) => {
         const album = hiddenAlbums[albumName];
         if (!album) return false;
-        const codeObj = album.backupCodes.find(c => c.code === code && !c.used);
-        if (codeObj) {
-          codeObj.used = true;
+        const idx = album.backupCodes.indexOf(code);
+        if (idx !== -1) {
+          album.backupCodes.splice(idx, 1);
           setHiddenAlbums(prev => ({ ...prev, [albumName]: { ...album, backupCodes: [...album.backupCodes] } }));
           return true;
         }
         return false;
       };
-
       const regenerateBackupCodes = (albumName) => {
         const album = hiddenAlbums[albumName];
         if (!album) return null;
@@ -605,108 +466,79 @@
         setHiddenAlbums(prev => ({ ...prev, [albumName]: { ...album } }));
         return newCodes;
       };
+      const promptUnlockAlbum = (albumName) => { setAlbumToUnlock(albumName); setUnlockModalOpen(true); };
 
-      const promptUnlockAlbum = (albumName) => {
-        setAlbumToUnlock(albumName);
-        setUnlockModalOpen(true);
+      // master password
+      const setMasterPassword = async (password) => { const hash = await hashString(password); setMasterPasswordHash(hash); setHiddenPortalAuth(true); setActiveView('hiddenPortal'); };
+      const verifyMasterPassword = async (password) => masterPasswordHash && (await hashString(password)) === masterPasswordHash;
+      const changeMasterPassword = async (oldPassword, newPassword) => (await verifyMasterPassword(oldPassword)) ? (await setMasterPassword(newPassword), true) : false;
+
+      // uploads
+      const handleMediaUpload = async (album, files) => {
+        for (const file of files) {
+          const isVideo = file.type.startsWith('video/');
+          const dataURL = await readFileAsDataURL(file);
+          const timestamp = Date.now();
+          const random = Math.floor(Math.random() * 1000);
+          const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
+          const filename = `${album}-${timestamp}-${random}.${ext}`;
+          const newMedia = { filename, dataURL, album, date: new Date().toISOString(), type: isVideo ? 'video' : 'image' };
+          setUploadedMedia(prev => [...prev, newMedia]);
+
+          if (isVideo) {
+            try {
+              const thumbDataURL = await generateVideoThumbnail(file);
+              setUploadedThumbnails(prev => ({ ...prev, [album]: thumbDataURL }));
+            } catch (e) { console.warn('Video thumbnail failed', e); }
+          }
+        }
+        showToast(`${files.length} item(s) added to "${album}"`);
       };
 
-      // ---------- MASTER PASSWORD FOR HIDDEN PORTAL ----------
-      const setMasterPassword = async (password) => {
-        const hash = await hashString(password);
-        setMasterPasswordHash(hash);
-        setHiddenPortalAuth(true);
-        setActiveView('hiddenPortal');
+      const handleThumbnailUpload = async (album, file) => {
+        const dataURL = await readFileAsDataURL(file);
+        setUploadedThumbnails(prev => ({ ...prev, [album]: dataURL }));
+        showToast(`Thumbnail for "${album}" updated`);
       };
 
-      const verifyMasterPassword = async (password) => {
-        if (!masterPasswordHash) return false;
-        const hash = await hashString(password);
-        return hash === masterPasswordHash;
-      };
-
-      const changeMasterPassword = async (oldPassword, newPassword) => {
-        if (!masterPasswordHash) return false;
-        const valid = await verifyMasterPassword(oldPassword);
-        if (!valid) return false;
-        await setMasterPassword(newPassword);
-        return true;
-      };
-
-      // ---------- AUDIO FUNCTIONS ----------
       const handleAudioUpload = async (files) => {
         for (const file of files) {
-          const arrayBuffer = await readFileAsArrayBuffer(file);
+          const arrayBuffer = await file.arrayBuffer();
           const blob = new Blob([arrayBuffer], { type: file.type });
-          const filename = `audio-${Date.now()}-${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
-          const audioObj = {
-            filename,
-            blob,
-            name: file.name,
-            date: new Date().toISOString()
-          };
-          setUploadedAudio(prev => [...prev, audioObj]);
+          const id = `audio-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+          setUploadedAudio(prev => [...prev, { id, blob, name: file.name, date: new Date().toISOString(), size: file.size, type: file.type }]);
         }
-        showToast(`${files.length} audio file(s) uploaded`);
+        showToast(`${files.length} audio(s) uploaded`);
       };
-
-      const playAudio = (audioFile) => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          URL.revokeObjectURL(audioRef.current.src);
-        }
-        const blob = audioFile.blob;
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.volume = audioVolume;
-        audio.addEventListener('timeupdate', () => setAudioProgress(audio.currentTime));
-        audio.addEventListener('loadedmetadata', () => setAudioDuration(audio.duration));
-        audio.addEventListener('ended', () => {
-          setAudioPlaying(false);
-          setAudioProgress(0);
-        });
-        audio.play();
-        setCurrentAudioFile(audioFile);
+      const deleteAudio = (id) => {
+        if (currentAudioId === id) { audioRef.current?.pause(); URL.revokeObjectURL(audioRef.current?.src); audioRef.current = null; setCurrentAudioId(null); setAudioPlaying(false); }
+        setUploadedAudio(prev => prev.filter(a => a.id !== id));
+        removeAudio(id).catch(()=>{});
+        showToast('Audio deleted');
+      };
+      const playAudio = (audio) => {
+        if (audioRef.current) { audioRef.current.pause(); URL.revokeObjectURL(audioRef.current.src); }
+        const url = URL.createObjectURL(audio.blob);
+        const audioEl = new Audio(url);
+        audioEl.loop = audioLoop;
+        audioRef.current = audioEl;
+        audioEl.volume = audioVolume;
+        audioEl.addEventListener('timeupdate', () => setAudioProgress(audioEl.currentTime));
+        audioEl.addEventListener('loadedmetadata', () => setAudioDuration(audioEl.duration));
+        audioEl.addEventListener('ended', () => { setAudioPlaying(false); setAudioProgress(0); });
+        audioEl.play();
+        setCurrentAudioId(audio.id);
         setAudioPlaying(true);
       };
+      const pauseAudio = () => { audioRef.current?.pause(); setAudioPlaying(false); };
+      const resumeAudio = () => { if (audioRef.current && currentAudioId) { audioRef.current.play(); setAudioPlaying(true); } };
+      const stopAudio = () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; setAudioPlaying(false); setAudioProgress(0); } };
+      const seekAudio = (time) => { if (audioRef.current) { audioRef.current.currentTime = time; setAudioProgress(time); } };
+      const setVolume = (vol) => { setAudioVolume(vol); if (audioRef.current) audioRef.current.volume = vol; };
+      const toggleLoop = () => { setAudioLoop(prev => !prev); if (audioRef.current) audioRef.current.loop = !audioLoop; };
+      const currentAudioFile = useMemo(() => uploadedAudio.find(a => a.id === currentAudioId), [uploadedAudio, currentAudioId]);
 
-      const pauseAudio = () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setAudioPlaying(false);
-        }
-      };
-
-      const resumeAudio = () => {
-        if (audioRef.current && currentAudioFile) {
-          audioRef.current.play();
-          setAudioPlaying(true);
-        }
-      };
-
-      const stopAudio = () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.currentTime = 0;
-          setAudioPlaying(false);
-          setAudioProgress(0);
-        }
-      };
-
-      const seekAudio = (time) => {
-        if (audioRef.current) {
-          audioRef.current.currentTime = time;
-          setAudioProgress(time);
-        }
-      };
-
-      const setVolume = (vol) => {
-        setAudioVolume(vol);
-        if (audioRef.current) audioRef.current.volume = vol;
-      };
-
-      // ---------- GALLERY NAVIGATION ----------
+      // gallery navigation
       const openGallery = (albumName, photos, context) => {
         setActiveAlbum(albumName);
         setGalleryContext(context);
@@ -714,131 +546,122 @@
         setActiveView('gallery');
         setZoomScale(1);
         setZoomTranslate({ x: 0, y: 0 });
+        setGallerySearch('');
+        setFilterType('all');
+        setSelectionMode(false);
+        setSelectedItems(new Set());
+      };
+      const showAlbum = (name) => {
+        if (name === 'Trash') openGallery('Trash', deletedMedia.map(i => i.filename), 'trash');
+        else if (name === 'Recent Uploads') {
+          const sevenDaysAgo = Date.now() - 7*24*60*60*1000;
+          const recent = uploadedMedia.filter(m => new Date(m.date).getTime() > sevenDaysAgo);
+          openGallery('Recent Uploads', recent.map(m => m.filename), 'recent');
+        } else if (name === 'Favorites') openGallery('Favorites', getAllVisiblePhotos().filter(f => favorites.has(f)), 'favorites');
+        else if (name === 'All Photos') openGallery('All Photos', getAllVisiblePhotos(), 'all');
+        else {
+          const data = peopleData[name];
+          if (data) openGallery(name, data.photos, 'album');
+        }
+      };
+      const handleAlbumClick = (name) => { isAlbumHidden(name) ? promptUnlockAlbum(name) : showAlbum(name); };
+
+      // lightbox
+      const openLightbox = (index) => { setCurrentPhotoIndex(index); setLightboxOpen(true); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+      const closeLightbox = () => { setLightboxOpen(false); if (slideshowInterval) { clearInterval(slideshowInterval); setSlideshowInterval(null); } };
+      const nextImage = () => { setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+      const prevImage = () => { setCurrentPhotoIndex(prev => (prev - 1 + currentGallery.length) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+      const toggleSlideshow = () => {
+        if (slideshowInterval) { clearInterval(slideshowInterval); setSlideshowInterval(null); }
+        else { nextImage(); const int = setInterval(() => { setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); }, 3000); setSlideshowInterval(int); }
       };
 
-      const showAlbum = (name) => {
-        if (name === 'Trash') {
-          openGallery('Trash', deletedImages.map(i => i.filename), 'trash');
-        } else if (name === 'Recent Uploads') {
-          const sevenDaysAgo = Date.now() - 7*24*60*60*1000;
-          const recent = uploadedImages.filter(img => new Date(img.date).getTime() > sevenDaysAgo);
-          openGallery('Recent Uploads', recent.map(img => img.filename), 'recent');
-        } else if (name === 'Favorites') {
-          const favs = getAllVisiblePhotos().filter(f => favorites.has(f));
-          openGallery('Favorites', favs, 'favorites');
-        } else if (name === 'All Photos') {
-          openGallery('All Photos', getAllVisiblePhotos(), 'all');
-        } else {
-          const data = peopleData[name];
-          if (data) {
-            openGallery(name, data.photos, 'album');
+      // delete current image from lightbox
+      const deleteCurrentImage = () => {
+        if (currentGallery.length && currentPhotoIndex >= 0) {
+          const filename = currentGallery[currentPhotoIndex];
+          if (uploadedMedia.some(i => i.filename === filename) && activeAlbum !== 'Trash') {
+            deleteUploadedMedia(filename);
           }
         }
       };
 
-      const handleAlbumClick = (name) => {
-        if (isAlbumHidden(name)) {
-          promptUnlockAlbum(name);
-        } else {
-          showAlbum(name);
-        }
+      // zoom
+      const handleZoomIn = (mouseX, mouseY) => {
+        setZoomScale(prev => {
+          const newScale = Math.min(prev + 0.5, 3);
+          if (mouseX !== undefined && mouseY !== undefined && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = mouseX - rect.left;
+            const y = mouseY - rect.top;
+            const dx = (x - rect.width/2) * (newScale/prev - 1);
+            const dy = (y - rect.height/2) * (newScale/prev - 1);
+            setZoomTranslate(prevTrans => ({ x: prevTrans.x - dx, y: prevTrans.y - dy }));
+          }
+          return newScale;
+        });
       };
-
-      // ---------- LIGHTBOX ----------
-      const openLightbox = (index) => { 
-        setCurrentPhotoIndex(index); 
-        setLightboxOpen(true);
-        setZoomScale(1);
-        setZoomTranslate({ x: 0, y: 0 });
-      };
-      const closeLightbox = () => { 
-        setLightboxOpen(false); 
-        if (slideshowInterval) { 
-          clearInterval(slideshowInterval); 
-          setSlideshowInterval(null); 
-        }
-        setZoomScale(1);
-        setZoomTranslate({ x: 0, y: 0 });
-      };
-      const nextImage = () => {
-        setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length);
-        setZoomScale(1);
-        setZoomTranslate({ x: 0, y: 0 });
-      };
-      const prevImage = () => {
-        setCurrentPhotoIndex(prev => (prev - 1 + currentGallery.length) % currentGallery.length);
-        setZoomScale(1);
-        setZoomTranslate({ x: 0, y: 0 });
-      };
-      const toggleSlideshow = () => {
-        if (slideshowInterval) { 
-          clearInterval(slideshowInterval); 
-          setSlideshowInterval(null); 
-        } else { 
-          nextImage(); 
-          const int = setInterval(() => {
-            setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length);
-            setZoomScale(1);
-            setZoomTranslate({ x: 0, y: 0 });
-          }, 3000); 
-          setSlideshowInterval(int); 
-        }
-      };
-
-      const handleZoomIn = () => setZoomScale(prev => Math.min(prev + 0.5, 3));
       const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1));
       const handleZoomReset = () => { setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
 
-      // ---------- UPLOADS (multi-image) ----------
-      const handleImageUpload = async (album, files) => {
-        for (const file of files) {
-          const dataURL = await readFileAsDataURL(file);
-          const timestamp = Date.now();
-          const random = Math.floor(Math.random() * 1000);
-          const ext = file.name.split('.').pop() || 'jpg';
-          const filename = `${album}-${timestamp}-${random}.${ext}`;
-          const newImage = { filename, dataURL, album, date: new Date().toISOString() };
-          setUploadedImages(prev => [...prev, newImage]);
-        }
-        showToast(`${files.length} image(s) added to "${album}"`);
-      };
-      const handleThumbnailUpload = async (album, file) => {
-        const dataURL = await readFileAsDataURL(file);
-        setUploadedThumbnails(prev => ({ ...prev, [album]: dataURL }));
-        showToast(`Thumbnail for "${album}" updated`);
-      };
-
-      const updateViewSetting = (key, value) => setViewSettings(prev => ({ ...prev, [key]: value }));
+      const containerRef = useRef(null);
 
       const albumSuggestions = useMemo(() => {
         const albums = new Set([...Object.keys(peopleData), ...Object.keys(uploadedThumbnails)]);
         return Array.from(albums).sort();
       }, [peopleData, uploadedThumbnails]);
 
-      // ---------- CONTEXT ----------
+      const updateViewSetting = (key, value) => setViewSettings(prev => ({ ...prev, [key]: value }));
+
+      // bulk actions
+      const toggleSelection = (filename) => {
+        setSelectedItems(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(filename)) newSet.delete(filename);
+          else newSet.add(filename);
+          return newSet;
+        });
+      };
+      const clearSelection = () => setSelectedItems(new Set());
+      const deleteSelected = () => {
+        if (selectedItems.size === 0) return;
+        if (confirm(`Delete ${selectedItems.size} item(s)?`)) {
+          selectedItems.forEach(filename => {
+            if (uploadedMedia.some(m => m.filename === filename)) deleteUploadedMedia(filename);
+          });
+          clearSelection();
+        }
+      };
+      const favoriteSelected = () => {
+        selectedItems.forEach(filename => {
+          if (!favorites.has(filename)) toggleFavorite(filename);
+        });
+        showToast(`Added ${selectedItems.size} to favorites`);
+        clearSelection();
+      };
+
       const contextValue = {
-        peopleData, thumbnailMap: effectiveThumbnailMap, uploadedImages, uploadedThumbnails,
-        favorites, deletedImages, hiddenAlbums, viewSettings, albumSortOrder,
+        peopleData, thumbnailMap: effectiveThumbnailMap, uploadedMedia, uploadedThumbnails,
+        favorites, deletedMedia, hiddenAlbums, viewSettings, albumSortOrder,
         activeView, activeAlbum, galleryContext, currentGallery, currentPhotoIndex,
-        lightboxOpen, slideshowInterval, greeting, unlockedHidden, albumSuggestions,
-        // audio
-        uploadedAudio, currentAudioFile, audioPlaying, audioProgress, audioDuration, audioVolume,
-        playAudio, pauseAudio, resumeAudio, stopAudio, seekAudio, setVolume,
-        // existing
+        lightboxOpen, slideshowInterval, unlockedHidden, albumSuggestions, gallerySearch, setGallerySearch,
+        filterType, setFilterType,
+        selectionMode, setSelectionMode, selectedItems, toggleSelection, clearSelection, deleteSelected, favoriteSelected,
+        uploadedAudio, currentAudioId, currentAudioFile, audioPlaying, audioProgress, audioDuration, audioVolume, audioLoop,
+        playAudio, pauseAudio, resumeAudio, stopAudio, seekAudio, setVolume, toggleLoop, deleteAudio, formatTime,
         setUnlockedHidden, getAllVisiblePhotos, getThumbUrl, isAlbumHidden, getAlbumPhotoCount,
-        toggleFavorite, deleteUploadedImage, restoreUploadedImage, permanentlyDeleteUploadedImage,
+        toggleFavorite, deleteUploadedMedia, restoreUploadedMedia, permanentlyDeleteMedia,
         clearTrash, hideAlbum, unhideAlbum, useBackupCode, regenerateBackupCodes,
         showAlbum, handleAlbumClick, openLightbox, closeLightbox, nextImage, prevImage,
         toggleSlideshow, deleteCurrentImage, openFavoriteLightbox,
-        setAlbumSortOrder, updateViewSetting, handleImageUpload, handleThumbnailUpload,
-        handleAudioUpload,
+        setAlbumSortOrder, updateViewSetting, handleMediaUpload, handleThumbnailUpload, handleAudioUpload,
         setActiveView, setActiveAlbum, setCurrentGallery, setGalleryContext, showToast,
         setUploadModalOpen, setHideModalOpen, setAlbumToHide, setBackupCodesModalOpen,
         setCurrentBackupCodes, setUnlockModalOpen, setAlbumToUnlock, promptUnlockAlbum,
-        masterPasswordHash, hiddenPortalAuth, setHiddenPortalAuth, setMasterPassword, 
+        masterPasswordHash, hiddenPortalAuth, setHiddenPortalAuth, setMasterPassword,
         verifyMasterPassword, changeMasterPassword, setUnlockPortalModalOpen,
         setChangeMasterPwModalOpen,
-        zoomScale, zoomTranslate, setZoomScale, setZoomTranslate, handleZoomIn, handleZoomOut, handleZoomReset,
+        zoomScale, zoomTranslate, setZoomScale, setZoomTranslate, handleZoomIn, handleZoomOut, handleZoomReset, containerRef,
       };
 
       return (
@@ -856,7 +679,7 @@
             <Footer />
           </div>
 
-          <UploadModal isOpen={uploadModalOpen} onClose={() => setUploadModalOpen(false)} onImageUpload={handleImageUpload} onThumbnailUpload={handleThumbnailUpload} onAudioUpload={handleAudioUpload} albumSuggestions={albumSuggestions} />
+          <UploadModal isOpen={uploadModalOpen} onClose={() => setUploadModalOpen(false)} onMediaUpload={handleMediaUpload} onThumbnailUpload={handleThumbnailUpload} onAudioUpload={handleAudioUpload} albumSuggestions={albumSuggestions} />
           <HideAlbumModal isOpen={hideModalOpen} onClose={() => setHideModalOpen(false)} albumName={albumToHide} />
           <BackupCodesModal isOpen={backupCodesModalOpen} onClose={() => setBackupCodesModalOpen(false)} codes={currentBackupCodes} />
           <UnlockAlbumModal isOpen={unlockModalOpen} onClose={() => setUnlockModalOpen(false)} albumName={albumToUnlock} />
@@ -867,10 +690,9 @@
         </AppContext.Provider>
       );
     }
-
-    // ---------- COMPONENTS ----------
+    // ---------- NAVBAR (royal gradient) ----------
     const Navbar = () => {
-      const { setActiveView, setUploadModalOpen, setAlbumSortOrder, albumSortOrder, showToast, hiddenPortalAuth, setUnlockPortalModalOpen } = useContext(AppContext);
+      const { setActiveView, setUploadModalOpen, setAlbumSortOrder, albumSortOrder, showToast, hiddenPortalAuth, setUnlockPortalModalOpen, selectionMode, setSelectionMode, clearSelection } = useContext(AppContext);
       const [theme, setTheme] = useState(() => localStorage.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
       useEffect(() => {
@@ -880,38 +702,38 @@
 
       const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
       const toggleSort = () => { setAlbumSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); showToast(`Sorted ${albumSortOrder === 'asc' ? 'Z→A' : 'A→Z'}`); };
-
-      const handleLockClick = () => {
-        if (hiddenPortalAuth) {
-          setActiveView('hiddenPortal');
-        } else {
-          setUnlockPortalModalOpen(true);
-        }
+      const handleLockClick = () => { hiddenPortalAuth ? setActiveView('hiddenPortal') : setUnlockPortalModalOpen(true); };
+      const handleSelectToggle = () => {
+        if (selectionMode) { clearSelection(); }
+        setSelectionMode(!selectionMode);
       };
 
       return (
         <nav className="fixed top-0 w-full z-50 glass-nav transition-all duration-300">
           <div className="container mx-auto px-4 h-16 flex justify-between items-center">
-            <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => window.location.reload()}>
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl flex items-center justify-center text-white shadow-lg group-hover:scale-105 transition-transform">
-                <i className="fa-solid fa-bolt"></i>
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => window.location.reload()}>
+              <div className="w-9 h-9 bg-gradient-to-br from-amber-700 to-purple-800 rounded-xl flex items-center justify-center text-amber-200 shadow-lg group-hover:scale-105 transition-transform">
+                <i className="fa-solid fa-crown"></i>
               </div>
-              <h1 className="text-lg font-bold tracking-tight">Smart<span className="text-blue-600">Gallery</span></h1>
+              <h1 className="text-lg font-bold tracking-tight bg-gradient-to-r from-amber-800 to-purple-900 bg-clip-text text-transparent dark:from-amber-300 dark:to-purple-400">Nova<span className="text-amber-600 dark:text-amber-400">Gallery</span></h1>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-grow justify-end">
-              <button onClick={() => setActiveView('audio')} className="w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-green-50 dark:hover:bg-slate-800 text-green-600 dark:text-green-400 transition flex-shrink-0 backdrop-blur-sm">
+            <div className="flex items-center gap-2 flex-grow justify-end">
+              <button onClick={() => setActiveView('audio')} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-emerald-50 dark:hover:bg-slate-800 text-emerald-700 dark:text-emerald-400 transition" aria-label="Audio Library">
                 <i className="fa-solid fa-headphones text-sm"></i>
               </button>
-              <button onClick={handleLockClick} className="w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-purple-50 dark:hover:bg-slate-800 text-purple-600 dark:text-purple-400 transition flex-shrink-0 backdrop-blur-sm">
+              <button onClick={handleLockClick} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-purple-50 dark:hover:bg-slate-800 text-purple-700 dark:text-purple-400 transition" aria-label="Hidden Vault">
                 <i className="fa-solid fa-lock text-sm"></i>
               </button>
-              <button onClick={toggleSort} className="w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition flex-shrink-0 backdrop-blur-sm">
+              <button onClick={toggleSort} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800 text-stone-700 dark:text-stone-300 transition" aria-label="Sort Albums">
                 <i className={`fa-solid ${albumSortOrder === 'asc' ? 'fa-arrow-down-a-z' : 'fa-arrow-up-z-a'} text-sm`}></i>
               </button>
-              <button onClick={() => setUploadModalOpen(true)} className="w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-blue-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 transition flex-shrink-0 backdrop-blur-sm">
+              <button onClick={handleSelectToggle} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-amber-50 dark:hover:bg-slate-800 text-amber-700 dark:text-amber-400 transition" aria-label={selectionMode ? 'Exit selection' : 'Select items'}>
+                <i className={`fa-solid ${selectionMode ? 'fa-check-circle' : 'fa-check-double'} text-sm`}></i>
+              </button>
+              <button onClick={() => setUploadModalOpen(true)} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-amber-100 dark:hover:bg-slate-800 text-amber-800 dark:text-amber-300 transition" aria-label="Upload">
                 <i className="fa-solid fa-cloud-upload-alt text-sm"></i>
               </button>
-              <button onClick={toggleTheme} className="w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-yellow-50 dark:hover:bg-slate-800 text-slate-600 dark:text-yellow-400 transition flex-shrink-0 backdrop-blur-sm">
+              <button onClick={toggleTheme} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-yellow-50 dark:hover:bg-slate-800 text-stone-700 dark:text-yellow-400 transition" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
                 <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-sm`}></i>
               </button>
             </div>
@@ -920,8 +742,9 @@
       );
     };
 
+    // ---------- PEOPLE VIEW (royal cards) ----------
     const PeopleView = () => {
-      const { peopleData, getAllVisiblePhotos, favorites, deletedImages, uploadedImages, isAlbumHidden, albumSortOrder, greeting, handleAlbumClick, getThumbUrl, setHideModalOpen, setAlbumToHide, showAlbum } = useContext(AppContext);
+      const { peopleData, getAllVisiblePhotos, favorites, deletedMedia, uploadedMedia, isAlbumHidden, albumSortOrder, handleAlbumClick, getThumbUrl, setHideModalOpen, setAlbumToHide } = useContext(AppContext);
       const [searchQuery, setSearchQuery] = useState('');
       const allVisible = getAllVisiblePhotos();
 
@@ -930,7 +753,7 @@
       albumNames.sort((a,b) => albumSortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
 
       const favCount = [...favorites].filter(f => allVisible.includes(f)).length;
-      const recentCount = uploadedImages.filter(img => new Date(img.date).getTime() > Date.now() - 7*24*60*60*1000).length;
+      const recentCount = uploadedMedia.filter(m => new Date(m.date).getTime() > Date.now() - 7*24*60*60*1000).length;
 
       return (
         <div className="animate-enter pb-12">
@@ -938,39 +761,39 @@
 
           <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">{greeting}</h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm font-medium">Your memories, beautifully organized.</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-amber-800 to-purple-900 bg-clip-text text-transparent dark:from-amber-300 dark:to-purple-400">Your Kingdom</h2>
+              <p className="text-stone-600 dark:text-amber-300/70 mt-1 text-sm font-medium">Memories, crowned.</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
-                <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs sm:text-sm"></i>
+                <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
                 <input type="text" placeholder="Filter albums..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-full py-2 pl-9 pr-4 text-xs sm:text-sm w-48 sm:w-64 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all backdrop-blur-sm"
+                  className="bg-white/70 dark:bg-slate-800/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 rounded-full py-2 pl-9 pr-4 text-xs w-48 sm:w-64 focus:ring-4 focus:ring-amber-500/10 outline-none transition backdrop-blur-sm"
                 />
               </div>
-              <div className="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full">
+              <div className="text-xs font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/40 px-3 py-1.5 rounded-full">
                 {Object.keys(peopleData).length} People
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-            <AlbumCard name="All Photos" count={allVisible.length} icon="layer-group" gradient="from-blue-500 to-cyan-500" onClick={() => handleAlbumClick('All Photos')} />
-            <AlbumCard name="Favorites" count={favCount} icon="heart" gradient="from-pink-500 to-rose-600" onClick={() => handleAlbumClick('Favorites')} />
-            {recentCount > 0 && <AlbumCard name="Recent Uploads" count={recentCount} icon="clock" gradient="from-green-500 to-teal-500" onClick={() => handleAlbumClick('Recent Uploads')} />}
-            {deletedImages.length > 0 && <AlbumCard name="Trash" count={deletedImages.length} icon="trash" gradient="from-amber-600 to-orange-600" onClick={() => handleAlbumClick('Trash')} />}
+            <AlbumCard name="All Photos" count={allVisible.length} icon="layer-group" gradient="from-amber-600 to-amber-800" onClick={() => handleAlbumClick('All Photos')} />
+            <AlbumCard name="Favorites" count={favCount} icon="heart" gradient="from-rose-600 to-pink-800" onClick={() => handleAlbumClick('Favorites')} />
+            {recentCount > 0 && <AlbumCard name="Recent Uploads" count={recentCount} icon="clock" gradient="from-emerald-600 to-teal-800" onClick={() => handleAlbumClick('Recent Uploads')} />}
+            {deletedMedia.length > 0 && <AlbumCard name="Trash" count={deletedMedia.length} icon="trash" gradient="from-stone-600 to-stone-800" onClick={() => handleAlbumClick('Trash')} />}
             
             {albumNames.map(name => {
               const data = peopleData[name];
               return (
-                <div key={name} className="group relative overflow-hidden rounded-2xl aspect-[4/5] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-slate-200 dark:bg-slate-800" onClick={() => handleAlbumClick(name)}>
-                  <img src={getThumbUrl(name)} alt={name} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-110 img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} onError={(e) => e.target.src = `https://ui-avatars.com/api/?name=${name}&background=random`} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                <div key={name} className="group relative overflow-hidden rounded-2xl aspect-[4/5] cursor-pointer shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-stone-200 dark:bg-stone-800 border border-amber-200/50 dark:border-amber-900/20" onClick={() => handleAlbumClick(name)}>
+                  <img src={getThumbUrl(name)} alt={name} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition duration-700 group-hover:scale-110 img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} onError={(e) => e.target.src = `https://ui-avatars.com/api/?name=${name}&background=7e5bef&color=ffd700`} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity"></div>
                   <div className="absolute bottom-0 left-0 p-4 w-full translate-y-1 group-hover:translate-y-0 transition-transform duration-300">
-                    <h3 className="text-white text-lg font-bold tracking-wide truncate leading-tight">{name}</h3>
-                    <span className="inline-block px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-[9px] font-medium text-white border border-white/10">{data.count} Photos</span>
+                    <h3 className="text-amber-100 text-lg font-bold tracking-wide truncate leading-tight drop-shadow-lg">{name}</h3>
+                    <span className="inline-block px-2 py-0.5 bg-amber-500/20 backdrop-blur-sm rounded-full text-[9px] font-medium text-amber-200 border border-amber-400/30">{data.count} items</span>
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); setAlbumToHide(name); setHideModalOpen(true); }} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-600 z-10">
+                  <button onClick={(e) => { e.stopPropagation(); setAlbumToHide(name); setHideModalOpen(true); }} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-800 z-10">
                     <i className="fa-solid fa-lock text-xs"></i>
                   </button>
                 </div>
@@ -978,27 +801,27 @@
             })}
           </div>
           {albumNames.length === 0 && !searchQuery && Object.keys(peopleData).length === 0 && (
-            <div className="text-center py-20"><p className="text-slate-500 dark:text-slate-400">No albums yet. Upload some images!</p></div>
+            <div className="text-center py-20"><p className="text-stone-500 dark:text-stone-400">No albums yet. Upload some treasures!</p></div>
           )}
         </div>
       );
     };
 
     const AlbumCard = ({ name, count, icon, gradient, onClick }) => (
-      <div className={`group relative overflow-hidden rounded-2xl aspect-[4/5] cursor-pointer shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br ${gradient}`} onClick={onClick}>
+      <div className={`group relative overflow-hidden rounded-2xl aspect-[4/5] cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 bg-gradient-to-br ${gradient}`} onClick={onClick}>
         <div className="absolute inset-0 flex items-center justify-center text-white/90 group-hover:scale-110 transition-transform duration-700">
-          <i className={`fa-solid fa-${icon} text-6xl drop-shadow-lg`}></i>
+          <i className={`fa-solid fa-${icon} text-6xl drop-shadow-xl`}></i>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
         <div className="absolute bottom-0 left-0 p-4 w-full">
-          <h3 className="text-white text-lg font-bold tracking-wide">{name}</h3>
-          <p className="text-white/80 text-xs font-medium">{count} Photos</p>
+          <h3 className="text-amber-100 text-lg font-bold tracking-wide">{name}</h3>
+          <p className="text-amber-200/80 text-xs font-medium">{count} items</p>
         </div>
       </div>
     );
 
     const FavoritesZone = () => {
-      const { favorites, openFavoriteLightbox, getAllVisiblePhotos, uploadedImages, showAlbum } = useContext(AppContext);
+      const { favorites, openFavoriteLightbox, getAllVisiblePhotos, uploadedMedia } = useContext(AppContext);
       const favArray = [...favorites].filter(f => getAllVisiblePhotos().includes(f));
       if (favArray.length === 0) return null;
       const displayFavs = favArray.sort(() => 0.5 - Math.random()).slice(0, 12);
@@ -1006,20 +829,20 @@
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight flex items-center gap-2">
-              <i className="fa-solid fa-heart text-rose-500"></i><span>Favorites Zone</span>
+              <i className="fa-solid fa-heart text-rose-500"></i><span className="bg-gradient-to-r from-rose-600 to-amber-600 bg-clip-text text-transparent">Favorites Zone</span>
             </h2>
-            <button onClick={() => showAlbum('Favorites')} className="text-xs font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 transition">
+            <button onClick={() => showAlbum('Favorites')} className="text-xs font-bold text-amber-700 hover:text-amber-800 dark:text-amber-400 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 transition">
               View All
             </button>
           </div>
           <div className="favorites-zone pb-2">
             {displayFavs.map(file => {
-              const uploaded = uploadedImages.find(img => img.filename === file);
-              const src = uploaded ? uploaded.dataURL : `${PATH_TO_IMAGES}${file}`;
-              const isVideo = file.toLowerCase().endsWith('.mp4');
+              const media = uploadedMedia.find(m => m.filename === file);
+              const src = media ? media.dataURL : `${PATH_TO_IMAGES}${file}`;
+              const isVideo = media?.type === 'video' || file.toLowerCase().endsWith('.mp4');
               return (
                 <div key={file} className="fav-item cursor-pointer" onClick={() => openFavoriteLightbox(file)}>
-                  <div className="relative aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] bg-slate-200 dark:bg-slate-800">
+                  <div className="relative aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] bg-stone-200 dark:bg-stone-800 border border-amber-300/30">
                     {isVideo ? <video src={src} className="w-full h-full object-cover" /> : <img src={src} loading="lazy" className="w-full h-full object-cover img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} />}
                   </div>
                 </div>
@@ -1030,18 +853,45 @@
       );
     };
 
+    // ---------- GALLERY VIEW with filter & bulk selection ----------
     const GalleryView = () => {
-      const { activeAlbum, galleryContext, currentGallery, viewSettings, updateViewSetting, uploadedImages, deletedImages, favorites, toggleFavorite, deleteUploadedImage, restoreUploadedImage, permanentlyDeleteUploadedImage, clearTrash, getThumbUrl, openLightbox, setActiveView } = useContext(AppContext);
+      const { 
+        activeAlbum, galleryContext, currentGallery, viewSettings, updateViewSetting,
+        uploadedMedia, deletedMedia, favorites, toggleFavorite, deleteUploadedMedia,
+        restoreUploadedMedia, permanentlyDeleteMedia, clearTrash, getThumbUrl, openLightbox,
+        setActiveView, gallerySearch, setGallerySearch, filterType, setFilterType,
+        selectionMode, selectedItems, toggleSelection, deleteSelected, favoriteSelected,
+      } = useContext(AppContext);
       const [dropdownOpen, setDropdownOpen] = useState(false);
       const isTrash = galleryContext === 'trash';
       const avatarSrc = !isTrash && activeAlbum !== 'Favorites' && activeAlbum !== 'All Photos' && activeAlbum !== 'Recent Uploads' ? getThumbUrl(activeAlbum) : null;
 
-      const trashImages = isTrash ? deletedImages : [];
+      const trashItems = isTrash ? deletedMedia : [];
 
-      const getPhotoSrc = (filename) => {
-        const uploaded = uploadedImages.find(img => img.filename === filename);
-        if (uploaded) return uploaded.dataURL;
-        const deleted = deletedImages.find(img => img.filename === filename);
+      // Apply filters (search + type)
+      const filteredGallery = useMemo(() => {
+        let items = isTrash ? trashItems : currentGallery;
+        if (gallerySearch) {
+          items = items.filter(item => {
+            const filename = isTrash ? item.filename : item;
+            return filename.toLowerCase().includes(gallerySearch.toLowerCase());
+          });
+        }
+        if (filterType !== 'all') {
+          items = items.filter(item => {
+            const filename = isTrash ? item.filename : item;
+            const media = uploadedMedia.find(m => m.filename === filename);
+            const type = media?.type || (filename.toLowerCase().endsWith('.mp4') ? 'video' : 'image');
+            return type === filterType;
+          });
+        }
+        return items;
+      }, [isTrash, trashItems, currentGallery, gallerySearch, filterType, uploadedMedia]);
+
+      const getItemSrc = (filename) => {
+        const media = uploadedMedia.find(m => m.filename === filename);
+        if (media) return media.dataURL;
+        const deleted = deletedMedia.find(d => d.filename === filename);
         if (deleted) return deleted.dataURL;
         return `${PATH_TO_IMAGES}${filename}`;
       };
@@ -1049,107 +899,153 @@
       return (
         <div className="animate-enter pb-12">
           <div className="sticky top-20 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8">
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg rounded-2xl p-3 sm:p-4 flex items-center justify-between">
+            <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl border border-amber-200/50 dark:border-amber-900/30 shadow-xl rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-4">
-                <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all shadow-sm">
+                <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-900 hover:text-amber-200 dark:hover:bg-white dark:hover:text-stone-900 transition-all shadow-sm">
                   <i className="fa-solid fa-arrow-left text-sm"></i>
                 </button>
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full overflow-hidden shadow-md ring-2 ring-white dark:ring-slate-700 flex items-center justify-center ${isTrash ? 'bg-amber-100 dark:bg-amber-900/30' : activeAlbum === 'Favorites' ? 'bg-rose-100 dark:bg-rose-900/30' : activeAlbum === 'All Photos' ? 'bg-blue-100 dark:bg-blue-900/30' : activeAlbum === 'Recent Uploads' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                    {avatarSrc ? <img src={avatarSrc} alt="" className="w-full h-full object-cover" /> : <i className={`fa-solid ${isTrash ? 'fa-trash text-amber-500' : activeAlbum === 'Favorites' ? 'fa-heart text-rose-500' : activeAlbum === 'All Photos' ? 'fa-layer-group text-blue-500' : activeAlbum === 'Recent Uploads' ? 'fa-clock text-green-500' : ''} text-lg`}></i>}
+                  <div className={`w-10 h-10 rounded-full overflow-hidden shadow-md ring-2 ring-amber-200 dark:ring-amber-800 flex items-center justify-center ${isTrash ? 'bg-stone-200 dark:bg-stone-700' : activeAlbum === 'Favorites' ? 'bg-rose-100 dark:bg-rose-900/30' : activeAlbum === 'All Photos' ? 'bg-amber-100 dark:bg-amber-900/30' : activeAlbum === 'Recent Uploads' ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-stone-100 dark:bg-stone-800'}`}>
+                    {avatarSrc ? <img src={avatarSrc} alt="" className="w-full h-full object-cover" /> : <i className={`fa-solid ${isTrash ? 'fa-trash text-stone-600' : activeAlbum === 'Favorites' ? 'fa-heart text-rose-600' : activeAlbum === 'All Photos' ? 'fa-layer-group text-amber-600' : activeAlbum === 'Recent Uploads' ? 'fa-clock text-emerald-600' : ''} text-lg`}></i>}
                   </div>
                   <div className="leading-tight">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{activeAlbum}</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{isTrash ? trashImages.length : currentGallery.length} Photos</p>
+                    <h2 className="text-lg font-bold text-stone-900 dark:text-amber-100">{activeAlbum}</h2>
+                    <p className="text-xs text-stone-500 dark:text-amber-300/70 font-medium">{isTrash ? trashItems.length : filteredGallery.length} items</p>
                   </div>
                 </div>
               </div>
-              <div className="relative">
-                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition shadow-sm">
-                  <i className="fa-solid fa-sliders"></i>
-                </button>
-                {dropdownOpen && (
-                  <div className="absolute right-0 top-12 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-40 p-3 animate-enter">
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">Grid Layout</p>
-                        <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                          {['masonry', 'square'].map(type => (
-                            <button key={type} onClick={() => updateViewSetting('type', type)} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${viewSettings.type === type ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400' : 'text-slate-500'}`}>
-                              {type === 'masonry' ? 'Masonry' : 'Square'}
-                            </button>
-                          ))}
+              <div className="flex items-center gap-2 ml-auto flex-wrap">
+                {/* Filter by type */}
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="bg-white/70 dark:bg-stone-800/70 border border-amber-200 dark:border-amber-800/30 rounded-full py-2 px-3 text-xs font-medium text-stone-700 dark:text-amber-200 focus:ring-2 focus:ring-amber-500/20 outline-none">
+                  <option value="all">All</option>
+                  <option value="image">Images</option>
+                  <option value="video">Videos</option>
+                </select>
+                <div className="relative">
+                  <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+                  <input type="text" placeholder="Filter..." value={gallerySearch} onChange={(e) => setGallerySearch(e.target.value)} className="bg-white/70 dark:bg-stone-800/70 border border-amber-200 dark:border-amber-800/30 rounded-full py-2 pl-9 pr-4 text-xs w-32 sm:w-40 focus:ring-2 focus:ring-amber-500/20 outline-none" />
+                </div>
+                <div className="relative">
+                  <button onClick={() => setDropdownOpen(!dropdownOpen)} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-amber-50 dark:hover:bg-stone-700 text-stone-700 dark:text-amber-300 transition shadow-sm">
+                    <i className="fa-solid fa-sliders"></i>
+                  </button>
+                  {dropdownOpen && (
+                    <div className="absolute right-0 top-12 w-56 bg-white dark:bg-stone-900 border border-amber-200 dark:border-amber-800/30 rounded-xl shadow-2xl z-40 p-3 animate-enter">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-stone-400 mb-2">Grid Layout</p>
+                          <div className="flex bg-stone-100 dark:bg-stone-800 p-1 rounded-lg">
+                            {['masonry', 'square'].map(type => (
+                              <button key={type} onClick={() => updateViewSetting('type', type)} className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${viewSettings.type === type ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-700 dark:text-amber-400' : 'text-stone-500'}`}>
+                                {type === 'masonry' ? 'Masonry' : 'Square'}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-2">Thumbnail Size</p>
-                        <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg px-2">
-                          {['small', 'medium', 'large'].map((size, i) => (
-                            <button key={size} onClick={() => updateViewSetting('size', size)} className={`w-8 h-8 rounded hover:bg-white dark:hover:bg-slate-700 transition flex items-center justify-center ${viewSettings.size === size ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400' : 'text-slate-500'}`}>
-                              <i className={`fa-solid fa-border-all ${i === 0 ? 'text-xs' : i === 1 ? 'text-sm' : 'text-lg'}`}></i>
-                            </button>
-                          ))}
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-stone-400 mb-2">Thumbnail Size</p>
+                          <div className="flex justify-between items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-lg px-2">
+                            {['small', 'medium', 'large'].map((size, i) => (
+                              <button key={size} onClick={() => updateViewSetting('size', size)} className={`w-8 h-8 rounded hover:bg-white dark:hover:bg-stone-700 transition flex items-center justify-center ${viewSettings.size === size ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-700 dark:text-amber-400' : 'text-stone-500'}`}>
+                                <i className={`fa-solid fa-border-all ${i === 0 ? 'text-xs' : i === 1 ? 'text-sm' : 'text-lg'}`}></i>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between cursor-pointer" onClick={() => updateViewSetting('showInfo', !viewSettings.showInfo)}>
-                          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Show File Info</span>
-                          <div className={`w-8 h-4 rounded-full relative transition-colors ${viewSettings.showInfo ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                            <div className={`w-4 h-4 bg-white rounded-full shadow absolute left-0 transition-all transform ${viewSettings.showInfo ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                        <div>
+                          <div className="flex items-center justify-between cursor-pointer" onClick={() => updateViewSetting('showInfo', !viewSettings.showInfo)}>
+                            <span className="text-xs font-medium text-stone-700 dark:text-stone-300">Show File Info</span>
+                            <div className={`w-8 h-4 rounded-full relative transition-colors ${viewSettings.showInfo ? 'bg-amber-600' : 'bg-stone-200 dark:bg-stone-700'}`}>
+                              <div className={`w-4 h-4 bg-white rounded-full shadow absolute left-0 transition-all transform ${viewSettings.showInfo ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Selection toolbar */}
+          {selectionMode && selectedItems.size > 0 && (
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bulk-toolbar rounded-full px-4 py-2 shadow-2xl flex items-center gap-3">
+              <span className="text-amber-200 text-sm font-medium">{selectedItems.size} selected</span>
+              <button onClick={favoriteSelected} className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-xs font-bold transition flex items-center gap-1">
+                <i className="fa-solid fa-heart"></i> Favorite
+              </button>
+              <button onClick={deleteSelected} className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white rounded-full text-xs font-bold transition flex items-center gap-1">
+                <i className="fa-solid fa-trash"></i> Delete
+              </button>
+              <button onClick={() => {}} className="px-3 py-1.5 bg-stone-600 hover:bg-stone-700 text-white rounded-full text-xs font-bold transition flex items-center gap-1">
+                <i className="fa-solid fa-folder-open"></i> Move
+              </button>
+            </div>
+          )}
+
           <div id="photo-container">
-            {(isTrash ? trashImages.length === 0 : currentGallery.length === 0) ? (
+            {filteredGallery.length === 0 ? (
               <div className="text-center py-32">
-                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">
+                <div className="w-20 h-20 bg-stone-100 dark:bg-stone-800/50 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400 dark:text-stone-600">
                   <i className="fa-regular fa-image text-3xl"></i>
                 </div>
-                <p className="text-slate-400 dark:text-slate-500 font-medium">It's looking a bit empty here.</p>
+                <p className="text-stone-500 dark:text-stone-400 font-medium">No items match.</p>
               </div>
             ) : (
               <>
                 <div className={viewSettings.type === 'square' 
                   ? `grid ${viewSettings.size === 'small' ? 'grid-cols-3 sm:grid-cols-5 lg:grid-cols-7 gap-1' : viewSettings.size === 'large' ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4' : 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-1'}`
                   : `columns-2 sm:columns-3 lg:columns-4 ${viewSettings.size === 'small' ? 'gap-4' : viewSettings.size === 'large' ? 'gap-6' : 'gap-4'}`}>
-                  {(isTrash ? trashImages : currentGallery).map((item, idx) => {
+                  {filteredGallery.map((item, idx) => {
                     let filename, src, isVideo, inTrash = isTrash;
                     if (isTrash) {
                       filename = item.filename;
                       src = item.dataURL;
-                      isVideo = filename.toLowerCase().endsWith('.mp4');
+                      isVideo = item.type === 'video' || filename.toLowerCase().endsWith('.mp4');
                     } else {
                       filename = item;
-                      src = getPhotoSrc(filename);
-                      isVideo = filename.toLowerCase().endsWith('.mp4');
+                      src = getItemSrc(filename);
+                      const media = uploadedMedia.find(m => m.filename === filename);
+                      isVideo = media?.type === 'video' || filename.toLowerCase().endsWith('.mp4');
                     }
+                    const isSelected = selectedItems.has(filename);
+                    const canSelect = selectionMode && !inTrash; // no selection in trash
+
                     return (
-                      <div key={filename} className={viewSettings.type === 'square' 
-                        ? `group relative aspect-square overflow-hidden cursor-zoom-in bg-slate-200 dark:bg-slate-800 ${viewSettings.size === 'small' ? '' : 'mb-4'}`
-                        : `masonry-item break-inside-avoid group relative rounded-xl overflow-hidden cursor-zoom-in bg-slate-200 dark:bg-slate-800 shadow-sm hover:shadow-md transition-all mb-4`}
-                        onClick={() => openLightbox(idx)}>
+                      <div key={filename} className={`group relative overflow-hidden cursor-zoom-in bg-stone-200 dark:bg-stone-800 shadow-sm hover:shadow-md transition-all mb-4 ${viewSettings.type === 'square' ? 'aspect-square' : 'masonry-item break-inside-avoid rounded-xl'} ${canSelect && isSelected ? 'selected-item' : ''} ${canSelect ? 'selectable' : ''}`}
+                        onClick={(e) => {
+                          if (selectionMode) {
+                            e.stopPropagation();
+                            toggleSelection(filename);
+                          } else {
+                            openLightbox(idx);
+                          }
+                        }}>
                         {isVideo ? <video src={src} className="w-full h-full object-cover pointer-events-none" /> : <img src={src} loading="lazy" className="w-full h-full object-cover transition duration-700 group-hover:scale-110 img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} />}
                         
+                        {isVideo && <div className="absolute inset-0 flex items-center justify-center text-white/80"><i className="fa-solid fa-play text-4xl drop-shadow-xl"></i></div>}
+
+                        {/* Selection indicator */}
+                        {canSelect && isSelected && (
+                          <div className="absolute top-2 left-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white z-20">
+                            <i className="fa-solid fa-check"></i>
+                          </div>
+                        )}
+
                         <div className="absolute top-2 right-2 flex gap-1 z-20">
                           {inTrash ? (
                             <>
-                              <button onClick={(e) => { e.stopPropagation(); restoreUploadedImage(filename); }} className="w-7 h-7 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg photo-action-btn">
+                              <button onClick={(e) => { e.stopPropagation(); restoreUploadedMedia(filename); }} className="w-7 h-7 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-lg photo-action-btn">
                                 <i className="fa-solid fa-rotate-left text-xs"></i>
                               </button>
-                              <button onClick={(e) => { e.stopPropagation(); permanentlyDeleteUploadedImage(filename); }} className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-lg photo-action-btn">
+                              <button onClick={(e) => { e.stopPropagation(); permanentlyDeleteMedia(filename); }} className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-lg photo-action-btn">
                                 <i className="fa-solid fa-trash text-xs"></i>
                               </button>
                             </>
                           ) : (
-                            uploadedImages.some(i => i.filename === filename) && !inTrash && (
-                              <button onClick={(e) => { e.stopPropagation(); deleteUploadedImage(filename); }} className="w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg photo-action-btn">
+                            uploadedMedia.some(m => m.filename === filename) && !inTrash && (
+                              <button onClick={(e) => { e.stopPropagation(); deleteUploadedMedia(filename); }} className="w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-lg photo-action-btn">
                                 <i className="fa-solid fa-trash text-xs"></i>
                               </button>
                             )
@@ -1165,9 +1061,9 @@
                     );
                   })}
                 </div>
-                {isTrash && deletedImages.length > 0 && (
+                {isTrash && deletedMedia.length > 0 && (
                   <div className="flex justify-center mt-8">
-                    <button onClick={clearTrash} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-full text-sm font-bold shadow-lg transition flex items-center gap-2">
+                    <button onClick={clearTrash} className="px-6 py-3 bg-rose-700 hover:bg-rose-800 text-white rounded-full text-sm font-bold shadow-lg transition flex items-center gap-2">
                       <i className="fa-solid fa-trash"></i> Empty Trash
                     </button>
                   </div>
@@ -1179,79 +1075,63 @@
       );
     };
 
+    // HiddenPortalView (same as before, but with royal touch)
     const HiddenPortalView = () => {
       const { hiddenAlbums, unlockedHidden, showAlbum, getThumbUrl, getAlbumPhotoCount, unhideAlbum, regenerateBackupCodes, setBackupCodesModalOpen, setCurrentBackupCodes, setActiveView, promptUnlockAlbum, setHiddenPortalAuth, setChangeMasterPwModalOpen } = useContext(AppContext);
       const hiddenNames = Object.keys(hiddenAlbums);
-
-      const handleLogout = () => {
-        setHiddenPortalAuth(false);
-        setActiveView('people');
-      };
-
+      const handleLogout = () => { setHiddenPortalAuth(false); setActiveView('people'); };
       return (
         <div className="animate-enter pb-12">
           <div className="sticky top-20 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8">
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg rounded-2xl p-3 sm:p-4 flex items-center justify-between">
+            <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl border border-amber-200/50 dark:border-amber-900/30 shadow-xl rounded-2xl p-3 sm:p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all shadow-sm">
+                <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-900 hover:text-amber-200 dark:hover:bg-white dark:hover:text-stone-900 transition-all shadow-sm">
                   <i className="fa-solid fa-arrow-left text-sm"></i>
                 </button>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <i className="fa-solid fa-lock text-purple-500"></i> Hidden Vault
+                <h2 className="text-xl font-bold text-stone-900 dark:text-amber-100 flex items-center gap-2">
+                  <i className="fa-solid fa-crown text-amber-500"></i> Hidden Vault
                 </h2>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setChangeMasterPwModalOpen(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-full transition shadow-md">
-                  <i className="fa-solid fa-key mr-1"></i> Change Password
+                <button onClick={() => setChangeMasterPwModalOpen(true)} className="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs rounded-full transition shadow-md">
+                  <i className="fa-solid fa-key mr-1"></i> Change Key
                 </button>
-                <button onClick={handleLogout} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-full transition shadow-md">
+                <button onClick={handleLogout} className="px-4 py-2 bg-purple-800 hover:bg-purple-900 text-white text-xs rounded-full transition shadow-md">
                   <i className="fa-solid fa-sign-out-alt mr-1"></i> Lock Vault
                 </button>
               </div>
             </div>
           </div>
-
           {hiddenNames.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <i className="fa-solid fa-lock text-3xl"></i>
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">No hidden albums.</p>
-            </div>
+            <div className="text-center py-20"><div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><i className="fa-solid fa-lock text-3xl"></i></div><p className="text-stone-500 dark:text-stone-400 font-medium">No hidden albums.</p></div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {hiddenNames.map(name => {
                 const count = getAlbumPhotoCount(name);
                 const isUnlocked = unlockedHidden.has(name);
                 return (
-                  <div key={name} className="group bg-white dark:bg-slate-800/90 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-200/70 dark:border-slate-700/70">
-                    <div className="relative aspect-[4/3] bg-slate-200 dark:bg-slate-700 cursor-pointer" onClick={() => isUnlocked ? showAlbum(name) : promptUnlockAlbum(name)}>
-                      <img src={getThumbUrl(name)} alt={name} className="absolute inset-0 w-full h-full object-cover img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} onError={(e) => e.target.src = `https://ui-avatars.com/api/?name=${name}&background=6b21a8&color=fff`} />
+                  <div key={name} className="group bg-white dark:bg-stone-800/90 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-amber-200/70 dark:border-amber-700/70">
+                    <div className="relative aspect-[4/3] bg-stone-200 dark:bg-stone-700 cursor-pointer" onClick={() => isUnlocked ? showAlbum(name) : promptUnlockAlbum(name)}>
+                      <img src={getThumbUrl(name)} alt={name} className="absolute inset-0 w-full h-full object-cover img-loading" onLoad={(e) => e.target.classList.add('img-loaded')} onError={(e) => e.target.src = `https://ui-avatars.com/api/?name=${name}&background=6b21a8&color=ffd700`} />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
                       <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end">
-                        <h3 className="text-white font-bold text-lg truncate">{name}</h3>
-                        <span className="bg-white/30 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full border border-white/20">
-                          {count} photos
-                        </span>
+                        <h3 className="text-amber-200 font-bold text-lg truncate">{name}</h3>
+                        <span className="bg-black/40 backdrop-blur-sm text-amber-300 text-xs px-2 py-1 rounded-full border border-amber-400/30">{count} items</span>
                       </div>
-                      {!isUnlocked && (
-                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full border border-white/20">
-                          <i className="fa-solid fa-lock mr-1"></i> Locked
-                        </div>
-                      )}
+                      {!isUnlocked && <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-amber-300 text-[10px] px-2 py-1 rounded-full border border-amber-400/30"><i className="fa-solid fa-lock mr-1"></i> Locked</div>}
                     </div>
                     <div className="p-3 flex flex-wrap gap-2">
                       <button onClick={() => isUnlocked ? showAlbum(name) : promptUnlockAlbum(name)} 
-                        className={`flex-1 py-1.5 text-xs rounded-full font-medium transition flex items-center justify-center gap-1 ${isUnlocked ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'}`}>
+                        className={`flex-1 py-1.5 text-xs rounded-full font-medium transition flex items-center justify-center gap-1 ${isUnlocked ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300'}`}>
                         <i className={`fa-solid ${isUnlocked ? 'fa-eye' : 'fa-unlock-alt'}`}></i>
                         {isUnlocked ? 'View' : 'Unlock'}
                       </button>
                       <button onClick={() => unhideAlbum(name)} 
-                        className="flex-1 py-1.5 text-xs rounded-full bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 transition font-medium flex items-center justify-center gap-1">
+                        className="flex-1 py-1.5 text-xs rounded-full bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 transition font-medium flex items-center justify-center gap-1">
                         <i className="fa-solid fa-lock-open"></i> Unhide
                       </button>
                       <button onClick={() => { const newCodes = regenerateBackupCodes(name); setCurrentBackupCodes(newCodes); setBackupCodesModalOpen(true); }} 
-                        className="w-8 h-6 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 transition flex items-center justify-center text-xs">
+                        className="w-8 h-6 rounded-full bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-200 transition flex items-center justify-center text-xs">
                         <i className="fa-solid fa-arrows-rotate"></i>
                       </button>
                     </div>
@@ -1264,56 +1144,55 @@
       );
     };
 
-    // Audio Library View
+    // AudioView (same as before, just royal)
     const AudioView = () => {
-      const { uploadedAudio, playAudio, currentAudioFile, audioPlaying, pauseAudio, resumeAudio, setActiveView } = useContext(AppContext);
+      const { uploadedAudio, playAudio, currentAudioId, audioPlaying, pauseAudio, resumeAudio, deleteAudio, setActiveView, formatTime } = useContext(AppContext);
+      const [confirmDeleteId, setConfirmDeleteId] = useState(null);
       return (
         <div className="animate-enter pb-12">
           <div className="sticky top-20 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8">
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 shadow-lg rounded-2xl p-3 sm:p-4 flex items-center">
-              <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all shadow-sm mr-4">
-                <i className="fa-solid fa-arrow-left text-sm"></i>
-              </button>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <i className="fa-solid fa-headphones text-green-500"></i> Audio Library
-              </h2>
+            <div className="bg-white/80 dark:bg-stone-900/80 backdrop-blur-xl border border-amber-200/50 dark:border-amber-900/30 shadow-xl rounded-2xl p-3 sm:p-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setActiveView('people')} className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-900 hover:text-amber-200 dark:hover:bg-white dark:hover:text-stone-900 transition-all shadow-sm">
+                  <i className="fa-solid fa-arrow-left text-sm"></i>
+                </button>
+                <h2 className="text-xl font-bold text-stone-900 dark:text-amber-100 flex items-center gap-2">
+                  <i className="fa-solid fa-headphones text-emerald-600"></i> Audio Library
+                </h2>
+              </div>
+              <div className="text-xs text-stone-500 dark:text-amber-300/70 bg-white/50 dark:bg-stone-800/50 px-3 py-1 rounded-full">
+                {uploadedAudio.length} tracks
+              </div>
             </div>
           </div>
-
           {uploadedAudio.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                <i className="fa-solid fa-music text-3xl"></i>
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">No audio files yet. Upload some music!</p>
-            </div>
+            <div className="text-center py-20"><div className="w-20 h-20 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400"><i className="fa-solid fa-music text-3xl"></i></div><p className="text-stone-500 dark:text-stone-400 font-medium">No audio files yet.</p></div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {uploadedAudio.map(audio => (
-                <div key={audio.filename} className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-slate-200 dark:border-slate-700">
+                <div key={audio.id} className="bg-white/70 dark:bg-stone-800/70 backdrop-blur-sm rounded-xl p-4 shadow-md border border-amber-200 dark:border-amber-800/30 hover:shadow-lg transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
-                      <i className="fa-solid fa-music"></i>
-                    </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400"><i className="fa-solid fa-music"></i></div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{audio.name}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{new Date(audio.date).toLocaleDateString()}</p>
+                      <p className="font-medium truncate text-stone-900 dark:text-amber-100">{audio.name}</p>
+                      <p className="text-xs text-stone-500 dark:text-amber-300/70">{new Date(audio.date).toLocaleDateString()} · {(audio.size / 1024 / 1024).toFixed(1)} MB</p>
                     </div>
-                    <button 
-                      onClick={() => {
-                        if (currentAudioFile?.filename === audio.filename && audioPlaying) {
-                          pauseAudio();
-                        } else if (currentAudioFile?.filename === audio.filename && !audioPlaying) {
-                          resumeAudio();
-                        } else {
-                          playAudio(audio);
-                        }
-                      }}
-                      className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center"
-                    >
-                      <i className={`fa-solid ${currentAudioFile?.filename === audio.filename && audioPlaying ? 'fa-pause' : 'fa-play'}`}></i>
-                    </button>
+                    <div className="flex gap-1">
+                      <button onClick={() => { if (currentAudioId === audio.id && audioPlaying) pauseAudio(); else if (currentAudioId === audio.id && !audioPlaying) resumeAudio(); else playAudio(audio); }} className="w-10 h-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center transition shadow-md">
+                        <i className={`fa-solid ${currentAudioId === audio.id && audioPlaying ? 'fa-pause' : 'fa-play'}`}></i>
+                      </button>
+                      <button onClick={() => setConfirmDeleteId(audio.id)} className="w-10 h-10 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition shadow-md">
+                        <i className="fa-solid fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
+                  {confirmDeleteId === audio.id && (
+                    <div className="mt-3 flex items-center gap-2 text-xs">
+                      <span className="text-stone-600 dark:text-amber-300">Delete permanently?</span>
+                      <button onClick={() => { deleteAudio(audio.id); setConfirmDeleteId(null); }} className="px-2 py-1 bg-rose-600 text-white rounded-md">Yes</button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="px-2 py-1 bg-stone-300 dark:bg-stone-600 rounded-md">No</button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1322,164 +1201,123 @@
       );
     };
 
-    // Audio Player (fixed at bottom)
+    // AudioPlayer (same as before, just royal)
     const AudioPlayer = () => {
-      const { currentAudioFile, audioPlaying, audioProgress, audioDuration, pauseAudio, resumeAudio, stopAudio, seekAudio, setVolume, audioVolume } = useContext(AppContext);
+      const { currentAudioFile, audioPlaying, audioProgress, audioDuration, pauseAudio, resumeAudio, stopAudio, seekAudio, setVolume, audioVolume, toggleLoop, audioLoop, formatTime } = useContext(AppContext);
+      const [expanded, setExpanded] = useState(false);
       if (!currentAudioFile) return null;
-
-      const formatTime = (sec) => {
-        const m = Math.floor(sec / 60);
-        const s = Math.floor(sec % 60).toString().padStart(2, '0');
-        return `${m}:${s}`;
-      };
-
+      const progressPercent = audioDuration ? (audioProgress / audioDuration) * 100 : 0;
       return (
-        <div className="audio-player fixed bottom-0 left-0 w-full z-40 p-3 shadow-lg">
-          <div className="container mx-auto flex items-center gap-4 flex-wrap sm:flex-nowrap">
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
-                <i className="fa-solid fa-headphones"></i>
+        <div className="audio-player fixed bottom-0 left-0 w-full z-40 p-2 sm:p-3 shadow-2xl border-t border-amber-200/50 dark:border-amber-900/30">
+          <div className="container mx-auto">
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-amber-700 flex items-center justify-center text-white shadow-lg flex-shrink-0"><i className="fa-solid fa-headphones"></i></div>
+                <div className="truncate">
+                  <p className="font-semibold text-sm truncate text-stone-900 dark:text-amber-100">{currentAudioFile.name}</p>
+                  <p className="text-xs text-stone-500 dark:text-amber-300/70">{(currentAudioFile.size / 1024 / 1024).toFixed(1)} MB</p>
+                </div>
               </div>
-              <div className="truncate">
-                <p className="font-medium text-sm truncate">{currentAudioFile.name}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Audio</p>
+              <div className="flex items-center gap-2">
+                <button onClick={stopAudio} className="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 flex items-center justify-center transition text-stone-700 dark:text-amber-300"><i className="fa-solid fa-stop text-xs"></i></button>
+                <button onClick={audioPlaying ? pauseAudio : resumeAudio} className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white flex items-center justify-center shadow-md transition"><i className={`fa-solid ${audioPlaying ? 'fa-pause' : 'fa-play'}`}></i></button>
+                <button onClick={toggleLoop} className={`w-8 h-8 rounded-full flex items-center justify-center transition ${audioLoop ? 'bg-amber-600 text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-amber-300'}`}><i className="fa-solid fa-repeat text-xs"></i></button>
               </div>
+              <div className="hidden sm:flex items-center gap-2 flex-1">
+                <span className="text-xs font-mono text-stone-600 dark:text-amber-300">{formatTime(audioProgress)}</span>
+                <input type="range" min="0" max={audioDuration || 0} value={audioProgress} onChange={(e) => seekAudio(parseFloat(e.target.value))} className="audio-progress flex-1" style={{ '--progress': `${progressPercent}%` }} />
+                <span className="text-xs font-mono text-stone-600 dark:text-amber-300">{formatTime(audioDuration)}</span>
+              </div>
+              <div className="hidden md:flex items-center gap-2">
+                <i className="fa-solid fa-volume-low text-stone-500 text-sm"></i>
+                <input type="range" min="0" max="1" step="0.01" value={audioVolume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="volume-slider w-20" />
+              </div>
+              <button onClick={() => setExpanded(!expanded)} className="sm:hidden w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center"><i className={`fa-solid fa-chevron-${expanded ? 'down' : 'up'} text-xs`}></i></button>
             </div>
-
-            <div className="flex items-center gap-3">
-              <button onClick={stopAudio} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 flex items-center justify-center">
-                <i className="fa-solid fa-stop text-xs"></i>
-              </button>
-              <button onClick={audioPlaying ? pauseAudio : resumeAudio} className="w-10 h-10 rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center">
-                <i className={`fa-solid ${audioPlaying ? 'fa-pause' : 'fa-play'}`}></i>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-xs font-mono">{formatTime(audioProgress)}</span>
-              <input 
-                type="range" 
-                min="0" 
-                max={audioDuration || 0} 
-                value={audioProgress} 
-                onChange={(e) => seekAudio(parseFloat(e.target.value))}
-                className="audio-progress flex-1"
-              />
-              <span className="text-xs font-mono">{formatTime(audioDuration)}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <i className="fa-solid fa-volume-low text-slate-500"></i>
-              <input 
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.01" 
-                value={audioVolume} 
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-20 audio-progress"
-              />
-            </div>
+            {expanded && (
+              <div className="mt-3 flex flex-col gap-2 sm:hidden">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-stone-600 dark:text-amber-300">{formatTime(audioProgress)}</span>
+                  <input type="range" min="0" max={audioDuration || 0} value={audioProgress} onChange={(e) => seekAudio(parseFloat(e.target.value))} className="audio-progress flex-1" style={{ '--progress': `${progressPercent}%` }} />
+                  <span className="text-xs font-mono text-stone-600 dark:text-amber-300">{formatTime(audioDuration)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-volume-low text-stone-500 text-sm"></i>
+                  <input type="range" min="0" max="1" step="0.01" value={audioVolume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="volume-slider w-full" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
     };
 
-    // ----- MODALS (fully implemented) -----
-    const UploadModal = ({ isOpen, onClose, onImageUpload, onThumbnailUpload, onAudioUpload, albumSuggestions }) => {
-      const [tab, setTab] = useState('thumbnail'); // 'thumbnail', 'image', 'audio'
+    // UploadModal (same as before but with royal accents)
+    const UploadModal = ({ isOpen, onClose, onMediaUpload, onThumbnailUpload, onAudioUpload, albumSuggestions }) => {
+      const [tab, setTab] = useState('media');
       const [album, setAlbum] = useState('');
-      const [files, setFiles] = useState([]);
+      const [mediaFiles, setMediaFiles] = useState([]);
       const [thumbnailFile, setThumbnailFile] = useState(null);
       const [thumbnailName, setThumbnailName] = useState('');
       const [audioFiles, setAudioFiles] = useState([]);
 
       if (!isOpen) return null;
 
-      const handleThumbnailFileChange = (e) => { 
-        const f = e.target.files[0]; 
-        if (f) { 
-          setThumbnailFile(f); 
-          setThumbnailName(f.name); 
-        } 
-      };
-      const handleImageFilesChange = (e) => {
-        const selected = Array.from(e.target.files);
-        setFiles(selected);
-      };
-      const handleAudioFilesChange = (e) => {
-        const selected = Array.from(e.target.files);
-        setAudioFiles(selected);
-      };
+      const handleThumbnailFileChange = (e) => { const f = e.target.files[0]; if (f) { setThumbnailFile(f); setThumbnailName(f.name); } };
+      const handleMediaFilesChange = (e) => { setMediaFiles(Array.from(e.target.files)); };
+      const handleAudioFilesChange = (e) => { setAudioFiles(Array.from(e.target.files)); };
 
       const handleSubmit = async () => {
         if (tab === 'thumbnail') {
-          if (!album.trim()) { alert('Please enter album name'); return; }
-          if (!thumbnailFile) { alert('Select a thumbnail image'); return; }
+          if (!album.trim() || !thumbnailFile) { alert('Album name and thumbnail required'); return; }
           await onThumbnailUpload(album.trim(), thumbnailFile);
-        } else if (tab === 'image') {
-          if (!album.trim()) { alert('Please enter album name'); return; }
-          if (files.length === 0) { alert('Select at least one image'); return; }
-          await onImageUpload(album.trim(), files);
+        } else if (tab === 'media') {
+          if (!album.trim() || mediaFiles.length === 0) { alert('Album name and at least one file required'); return; }
+          await onMediaUpload(album.trim(), mediaFiles);
         } else if (tab === 'audio') {
-          if (audioFiles.length === 0) { alert('Select at least one audio file'); return; }
+          if (audioFiles.length === 0) { alert('Select audio files'); return; }
           await onAudioUpload(audioFiles);
         }
         onClose(); 
-        setAlbum(''); setFiles([]); setThumbnailFile(null); setThumbnailName(''); setAudioFiles([]);
+        setAlbum(''); setMediaFiles([]); setThumbnailFile(null); setThumbnailName(''); setAudioFiles([]);
       };
 
       return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3"><i className="fa-solid fa-cloud-upload-alt text-blue-500"></i><span>Upload Studio</span></h3>
-              <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i className="fa-solid fa-xmark text-lg"></i></button>
+              <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 flex items-center gap-3"><i className="fa-solid fa-cloud-upload-alt text-amber-600"></i><span>Upload Studio</span></h3>
+              <button onClick={onClose} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700"><i className="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div className="flex bg-slate-100/80 dark:bg-slate-800/80 rounded-full p-1 mb-8">
-              <button onClick={() => setTab('thumbnail')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'thumbnail' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400' : ''}`}>Thumbnail</button>
-              <button onClick={() => setTab('image')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'image' ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-400' : ''}`}>Images</button>
-              <button onClick={() => setTab('audio')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'audio' ? 'bg-white text-green-600 shadow-sm dark:bg-slate-700 dark:text-green-400' : ''}`}>Audio</button>
+            <div className="flex bg-stone-100/80 dark:bg-stone-800/80 rounded-full p-1 mb-8">
+              <button onClick={() => setTab('media')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'media' ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-700 dark:text-amber-400' : ''}`}>Images & Videos</button>
+              <button onClick={() => setTab('thumbnail')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'thumbnail' ? 'bg-white text-amber-700 shadow-sm dark:bg-stone-700 dark:text-amber-400' : ''}`}>Thumbnail</button>
+              <button onClick={() => setTab('audio')} className={`upload-tab flex-1 py-2.5 px-4 rounded-full text-sm font-medium transition-all ${tab === 'audio' ? 'bg-white text-emerald-700 shadow-sm dark:bg-stone-700 dark:text-emerald-400' : ''}`}>Audio</button>
             </div>
             <div className="space-y-5">
               {tab !== 'audio' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Album Name</label>
-                  <input 
-                    type="text" 
-                    value={album} 
-                    onChange={(e) => setAlbum(e.target.value)} 
-                    placeholder="e.g. Maria, Trips, Family" 
-                    list="album-suggestions"
-                    className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" 
-                  />
-                  <datalist id="album-suggestions">
-                    {albumSuggestions.map(name => <option key={name} value={name} />)}
-                  </datalist>
+                  <label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Album Name</label>
+                  <input type="text" value={album} onChange={(e) => setAlbum(e.target.value)} placeholder="e.g. Maria, Trips, Family" list="album-suggestions" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" />
+                  <datalist id="album-suggestions">{albumSuggestions.map(name => <option key={name} value={name} />)}</datalist>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {tab === 'thumbnail' ? 'Thumbnail Image' : tab === 'image' ? 'Image Files' : 'Audio Files'}
+                <label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">
+                  {tab === 'thumbnail' ? 'Thumbnail Image' : tab === 'media' ? 'Images & Videos' : 'Audio Files'}
                 </label>
-                <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer">
-                  <input 
-                    type="file" 
-                    accept={tab === 'audio' ? 'audio/*' : 'image/*'} 
-                    onChange={tab === 'thumbnail' ? handleThumbnailFileChange : tab === 'image' ? handleImageFilesChange : handleAudioFilesChange} 
-                    multiple={tab !== 'thumbnail'} 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                  />
-                  <i className={`fa-solid ${tab === 'audio' ? 'fa-headphones' : 'fa-cloud-upload-alt'} text-3xl text-slate-400 mb-2`}></i>
-                  <p className="text-sm text-slate-600 dark:text-slate-300">Click or drag {tab === 'thumbnail' ? 'image' : tab === 'image' ? 'images' : 'audio files'}</p>
-                  {tab === 'thumbnail' && thumbnailName && <p className="text-xs text-blue-500 mt-1 truncate">{thumbnailName}</p>}
-                  {tab === 'image' && files.length > 0 && <p className="text-xs text-blue-500 mt-1 truncate">{files.length} file(s) selected</p>}
-                  {tab === 'audio' && audioFiles.length > 0 && <p className="text-xs text-green-500 mt-1 truncate">{audioFiles.length} file(s) selected</p>}
+                <div className="relative border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-xl p-6 text-center hover:border-amber-500 transition cursor-pointer">
+                  <input type="file" accept={tab === 'audio' ? 'audio/*' : tab === 'thumbnail' ? 'image/*' : 'image/*,video/*'} onChange={tab === 'thumbnail' ? handleThumbnailFileChange : tab === 'media' ? handleMediaFilesChange : handleAudioFilesChange} multiple={tab !== 'thumbnail'} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <i className={`fa-solid ${tab === 'audio' ? 'fa-headphones' : 'fa-cloud-upload-alt'} text-3xl text-stone-400 mb-2`}></i>
+                  <p className="text-sm text-stone-600 dark:text-stone-300">Click or drag {tab === 'thumbnail' ? 'image' : tab === 'media' ? 'images/videos' : 'audio files'}</p>
+                  {tab === 'thumbnail' && thumbnailName && <p className="text-xs text-amber-600 mt-1 truncate">{thumbnailName}</p>}
+                  {tab === 'media' && mediaFiles.length > 0 && <p className="text-xs text-amber-600 mt-1 truncate">{mediaFiles.length} file(s) selected</p>}
+                  {tab === 'audio' && audioFiles.length > 0 && <p className="text-xs text-emerald-600 mt-1 truncate">{audioFiles.length} file(s) selected</p>}
                 </div>
               </div>
-              <button onClick={handleSubmit} className={`w-full py-3.5 bg-gradient-to-r ${tab === 'thumbnail' ? 'from-blue-600 to-blue-500' : tab === 'image' ? 'from-emerald-600 to-emerald-500' : 'from-green-600 to-green-500'} hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2`}>
-                <i className={`fa-solid ${tab === 'thumbnail' ? 'fa-plus-circle' : tab === 'image' ? 'fa-arrow-up-from-bracket' : 'fa-upload'}`}></i>
-                <span>{tab === 'thumbnail' ? 'Set as Thumbnail' : tab === 'image' ? `Upload ${files.length} Image(s)` : `Upload ${audioFiles.length} Audio`}</span>
+              <button onClick={handleSubmit} className={`w-full py-3.5 bg-gradient-to-r ${tab === 'thumbnail' ? 'from-amber-600 to-amber-500' : tab === 'media' ? 'from-emerald-600 to-emerald-500' : 'from-emerald-600 to-emerald-500'} hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center justify-center gap-2`}>
+                <i className={`fa-solid ${tab === 'thumbnail' ? 'fa-plus-circle' : tab === 'media' ? 'fa-arrow-up-from-bracket' : 'fa-upload'}`}></i>
+                <span>{tab === 'thumbnail' ? 'Set Thumbnail' : tab === 'media' ? `Upload ${mediaFiles.length} item(s)` : `Upload ${audioFiles.length} audio`}</span>
               </button>
             </div>
           </div>
@@ -1487,15 +1325,14 @@
       );
     };
 
+    // HideAlbumModal, BackupCodesModal, UnlockAlbumModal, UnlockHiddenPortalModal, ChangeMasterPasswordModal (same as before but with royal class names)
     const HideAlbumModal = ({ isOpen, onClose, albumName }) => {
       const { hideAlbum, setBackupCodesModalOpen, setCurrentBackupCodes, showToast } = useContext(AppContext);
       const [password, setPassword] = useState('');
       const [confirm, setConfirm] = useState('');
       const [question, setQuestion] = useState('');
       const [answer, setAnswer] = useState('');
-
       if (!isOpen || !albumName) return null;
-
       const handleHide = async () => {
         if (!password || !confirm || !question || !answer) { showToast('All fields required', 'error'); return; }
         if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
@@ -1503,22 +1340,21 @@
         if (codes) { onClose(); setCurrentBackupCodes(codes); setBackupCodesModalOpen(true); } 
         else { showToast('Album already hidden', 'error'); }
       };
-
       return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3"><i className="fa-solid fa-lock text-purple-500"></i><span>Hide Album</span></h3>
-              <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i className="fa-solid fa-xmark text-lg"></i></button>
+              <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 flex items-center gap-3"><i className="fa-solid fa-lock text-purple-600"></i><span>Hide Album</span></h3>
+              <button onClick={onClose} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700"><i className="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div className="mb-4 text-lg font-semibold text-blue-600 dark:text-blue-400">{albumName}</div>
+            <div className="mb-4 text-lg font-semibold text-amber-700 dark:text-amber-400">{albumName}</div>
             <div className="space-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" /></div>
-              <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Confirm Password</label><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" /></div>
-              <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Security Question</label><input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g. Mother's maiden name" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" /></div>
-              <div><label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Answer</label><input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Password</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Confirm Password</label><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Security Question</label><input type="text" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g. Mother's maiden name" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Answer</label><input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
             </div>
-            <button onClick={handleHide} className="w-full mt-6 py-3.5 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"><i className="fa-solid fa-lock"></i> Hide Album & Generate Codes</button>
+            <button onClick={handleHide} className="w-full mt-6 py-3.5 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 transition-all flex items-center justify-center gap-2"><i className="fa-solid fa-lock"></i> Hide Album & Generate Codes</button>
           </div>
         </div>
       );
@@ -1529,10 +1365,10 @@
       return (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-3"><i className="fa-solid fa-shield text-green-500"></i><span>Your Backup Codes</span></h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">Each code can be used only once. Store them safely.</p>
-            <div className="grid grid-cols-2 gap-2 mb-6">{codes.map((c, i) => <div key={i} className="backup-code text-center">{c.code}</div>)}</div>
-            <button onClick={onClose} className="w-full py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl font-medium transition">I have saved the codes</button>
+            <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 mb-4 flex items-center gap-3"><i className="fa-solid fa-shield text-emerald-600"></i><span>Your Backup Codes</span></h3>
+            <p className="text-sm text-stone-600 dark:text-amber-300/70 mb-4">Each code can be used only once. Store them safely.</p>
+            <div className="grid grid-cols-2 gap-2 mb-6">{codes.map((c, i) => <div key={i} className="backup-code text-center bg-stone-100 dark:bg-stone-800 p-2 rounded-lg font-mono text-xs">{c}</div>)}</div>
+            <button onClick={onClose} className="w-full py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl font-medium transition">I have saved the codes</button>
           </div>
         </div>
       );
@@ -1543,11 +1379,9 @@
       const [codeOrPw, setCodeOrPw] = useState('');
       const [showForgot, setShowForgot] = useState(false);
       const [answer, setAnswer] = useState('');
-
       if (!isOpen || !albumName) return null;
       const album = hiddenAlbums[albumName];
       if (!album) return null;
-
       const handleUnlock = async () => {
         if (!codeOrPw) return showToast('Enter password or code', 'error');
         const hashedInput = await hashString(codeOrPw);
@@ -1559,7 +1393,6 @@
           onClose(); showAlbum(albumName); setActiveView('gallery');
         } else { showToast('Invalid password or code', 'error'); }
       };
-
       const handleAnswer = async () => {
         const hashedAnswer = await hashString(answer.toLowerCase());
         if (hashedAnswer === album.answer) {
@@ -1567,32 +1400,31 @@
           onClose(); showAlbum(albumName); setActiveView('gallery');
         } else { showToast('Incorrect answer', 'error'); }
       };
-
       return (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i className="fa-solid fa-lock-open text-blue-500"></i> Unlock Album</h3>
-              <button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i className="fa-solid fa-xmark"></i></button>
+              <h3 className="text-xl font-bold text-stone-900 dark:text-amber-100 flex items-center gap-2"><i className="fa-solid fa-lock-open text-amber-600"></i> Unlock Album</h3>
+              <button onClick={onClose} className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700"><i className="fa-solid fa-xmark"></i></button>
             </div>
-            <div className="text-lg font-semibold text-purple-600 dark:text-purple-400 mb-2">{albumName}</div>
+            <div className="text-lg font-semibold text-purple-700 dark:text-purple-400 mb-2">{albumName}</div>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Password or Backup Code</label>
-                <input type="text" value={codeOrPw} onChange={(e) => setCodeOrPw(e.target.value)} placeholder="Enter password or one-time code" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" />
+                <label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Password or Backup Code</label>
+                <input type="text" value={codeOrPw} onChange={(e) => setCodeOrPw(e.target.value)} placeholder="Enter password or one-time code" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" />
               </div>
               {showForgot && (
                 <div className="space-y-2">
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{album.question}</p>
-                  <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Answer" className="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700" />
-                  <button onClick={handleAnswer} className="w-full py-2 bg-blue-600 text-white rounded-xl">Submit Answer</button>
+                  <p className="text-sm text-stone-600 dark:text-amber-300/70">{album.question}</p>
+                  <input type="text" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Answer" className="w-full px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800/30" />
+                  <button onClick={handleAnswer} className="w-full py-2 bg-amber-600 text-white rounded-xl">Submit Answer</button>
                 </div>
               )}
-              <button onClick={() => setShowForgot(true)} className="text-xs text-blue-600 dark:text-blue-400 underline">Forgot password? Use security question</button>
+              <button onClick={() => setShowForgot(true)} className="text-xs text-amber-600 dark:text-amber-400 underline">Forgot password? Use security question</button>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleUnlock} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition">Unlock</button>
-              <button onClick={onClose} className="flex-1 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition">Cancel</button>
+              <button onClick={handleUnlock} className="flex-1 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl transition">Unlock</button>
+              <button onClick={onClose} className="flex-1 py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl transition">Cancel</button>
             </div>
           </div>
         </div>
@@ -1603,9 +1435,7 @@
       const { masterPasswordHash, setMasterPassword, verifyMasterPassword, setHiddenPortalAuth, setActiveView, showToast } = useContext(AppContext);
       const [password, setPassword] = useState('');
       const [error, setError] = useState('');
-
       if (!isOpen) return null;
-
       const handleSubmit = async () => {
         if (!masterPasswordHash) {
           if (!password) { setError('Password required'); return; }
@@ -1614,40 +1444,22 @@
           onClose();
         } else {
           const valid = await verifyMasterPassword(password);
-          if (valid) {
-            setHiddenPortalAuth(true);
-            setActiveView('hiddenPortal');
-            showToast('Hidden vault unlocked');
-            onClose();
-          } else {
-            setError('Incorrect password');
-          }
+          if (valid) { setHiddenPortalAuth(true); setActiveView('hiddenPortal'); showToast('Hidden vault unlocked'); onClose(); }
+          else { setError('Incorrect password'); }
         }
       };
-
       return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-              <i className="fa-solid fa-shield text-purple-600"></i>
-              <span>{!masterPasswordHash ? 'Create Master Password' : 'Enter Master Password'}</span>
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-              {!masterPasswordHash ? 'This password will be required to access the hidden vault.' : 'Access your secret gallery.'}
-            </p>
+            <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 mb-4 flex items-center gap-3"><i className="fa-solid fa-shield text-purple-700"></i><span>{!masterPasswordHash ? 'Create Master Password' : 'Enter Master Password'}</span></h3>
+            <p className="text-sm text-stone-600 dark:text-amber-300/70 mb-4">{!masterPasswordHash ? 'This password will be required to access the hidden vault.' : 'Access your secret gallery.'}</p>
             <div className="space-y-4">
-              <div>
-                <input type="password" placeholder="Password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition dark:text-white" />
-              </div>
-              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+              <div><input type="password" placeholder="Password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition dark:text-white" /></div>
+              {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleSubmit} className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold rounded-xl shadow-lg transition">
-                {!masterPasswordHash ? 'Create & Unlock' : 'Unlock'}
-              </button>
-              <button onClick={onClose} className="flex-1 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl font-medium transition">
-                Cancel
-              </button>
+              <button onClick={handleSubmit} className="flex-1 py-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition">{!masterPasswordHash ? 'Create & Unlock' : 'Unlock'}</button>
+              <button onClick={onClose} className="flex-1 py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl font-medium transition">Cancel</button>
             </div>
           </div>
         </div>
@@ -1660,99 +1472,74 @@
       const [newPassword, setNewPassword] = useState('');
       const [confirm, setConfirm] = useState('');
       const [error, setError] = useState('');
-
       if (!isOpen) return null;
-
       const handleChange = async () => {
-        if (!masterPasswordHash) {
-          showToast('No master password set. Use unlock to create one.', 'error');
-          onClose();
-          return;
-        }
-        if (!oldPassword || !newPassword || !confirm) {
-          setError('All fields required');
-          return;
-        }
-        if (newPassword !== confirm) {
-          setError('New passwords do not match');
-          return;
-        }
+        if (!masterPasswordHash) { showToast('No master password set.', 'error'); onClose(); return; }
+        if (!oldPassword || !newPassword || !confirm) { setError('All fields required'); return; }
+        if (newPassword !== confirm) { setError('New passwords do not match'); return; }
         const success = await changeMasterPassword(oldPassword, newPassword);
-        if (success) {
-          showToast('Master password changed successfully');
-          onClose();
-        } else {
-          setError('Old password is incorrect');
-        }
+        if (success) { showToast('Master password changed'); onClose(); } else { setError('Old password is incorrect'); }
       };
-
       return (
         <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" onClick={onClose}>
           <div className="glass-modal rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-3">
-              <i className="fa-solid fa-key text-blue-600"></i> Change Master Password
-            </h3>
+            <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 mb-4 flex items-center gap-3"><i className="fa-solid fa-key text-amber-600"></i> Change Master Password</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Current Password</label>
-                <input type="password" value={oldPassword} onChange={(e) => { setOldPassword(e.target.value); setError(''); }} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">New Password</label>
-                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Confirm New Password</label>
-                <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition dark:text-white" />
-              </div>
-              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Current Password</label><input type="password" value={oldPassword} onChange={(e) => { setOldPassword(e.target.value); setError(''); }} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">New Password</label><input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              <div><label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Confirm New Password</label><input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" /></div>
+              {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={handleChange} className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold rounded-xl shadow-lg transition">
-                Change Password
-              </button>
-              <button onClick={onClose} className="flex-1 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl font-medium transition">
-                Cancel
-              </button>
+              <button onClick={handleChange} className="flex-1 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-xl shadow-lg transition">Change Password</button>
+              <button onClick={onClose} className="flex-1 py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl font-medium transition">Cancel</button>
             </div>
           </div>
         </div>
       );
     };
 
-    // Lightbox
+    // Lightbox with enhanced video player (Picture-in-Picture & speed)
     const Lightbox = () => {
       const { 
         lightboxOpen, currentGallery, currentPhotoIndex, nextImage, prevImage, closeLightbox, 
         toggleSlideshow, slideshowInterval, toggleFavorite, favorites, deleteCurrentImage, 
-        uploadedImages, activeAlbum, deletedImages, zoomScale, zoomTranslate, setZoomTranslate,
-        handleZoomIn, handleZoomOut, handleZoomReset, setZoomScale
+        uploadedMedia, activeAlbum, deletedMedia, zoomScale, zoomTranslate, setZoomTranslate,
+        handleZoomIn, handleZoomOut, handleZoomReset, containerRef
       } = useContext(AppContext);
       
       const [isDragging, setIsDragging] = useState(false);
       const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-      const containerRef = useRef(null);
+      // video player state
+      const [videoPlaying, setVideoPlaying] = useState(false);
+      const [videoProgress, setVideoProgress] = useState(0);
+      const [videoDuration, setVideoDuration] = useState(0);
+      const [videoVolume, setVideoVolume] = useState(1);
+      const [playbackRate, setPlaybackRate] = useState(1.0);
+      const videoRef = useRef(null);
 
       useEffect(() => {
-        return () => setIsDragging(false);
+        return () => { setIsDragging(false); if (videoRef.current) videoRef.current.pause(); };
       }, []);
 
       if (!lightboxOpen) return null;
       
       const filename = currentGallery[currentPhotoIndex];
+      if (!filename) return null;
       let src;
       const inTrash = activeAlbum === 'Trash';
+      const media = uploadedMedia.find(m => m.filename === filename);
       if (inTrash) {
-        const deleted = deletedImages.find(d => d.filename === filename);
+        const deleted = deletedMedia.find(d => d.filename === filename);
         src = deleted ? deleted.dataURL : `${PATH_TO_IMAGES}${filename}`;
       } else {
-        const uploaded = uploadedImages.find(img => img.filename === filename);
-        src = uploaded ? uploaded.dataURL : `${PATH_TO_IMAGES}${filename}`;
+        src = media ? media.dataURL : `${PATH_TO_IMAGES}${filename}`;
       }
-      const isVideo = filename?.toLowerCase().endsWith('.mp4');
+      const isVideo = media?.type === 'video' || filename?.toLowerCase().endsWith('.mp4');
       const isFav = favorites.has(filename);
-      const showDelete = (uploadedImages.some(i => i.filename === filename) || inTrash) && activeAlbum !== 'Trash';
+      const showDelete = (uploadedMedia.some(i => i.filename === filename) || inTrash) && activeAlbum !== 'Trash';
 
+      // drag handlers for zoom
       const handleMouseDown = (e) => {
         if (zoomScale <= 1) return;
         e.preventDefault();
@@ -1771,23 +1558,48 @@
       const handleDoubleClick = (e) => {
         e.preventDefault();
         if (zoomScale > 1) handleZoomReset();
-        else handleZoomIn();
+        else handleZoomIn(e.clientX, e.clientY);
+      };
+
+      // video controls
+      const toggleVideoPlay = () => {
+        if (!videoRef.current) return;
+        if (videoPlaying) videoRef.current.pause();
+        else videoRef.current.play();
+        setVideoPlaying(!videoPlaying);
+      };
+      const handleVideoTimeUpdate = () => {
+        if (videoRef.current) {
+          setVideoProgress(videoRef.current.currentTime);
+          setVideoDuration(videoRef.current.duration);
+        }
+      };
+      const seekVideo = (time) => { if (videoRef.current) videoRef.current.currentTime = time; };
+      const handleVideoVolume = (vol) => { setVideoVolume(vol); if (videoRef.current) videoRef.current.volume = vol; };
+      const togglePiP = async () => {
+        if (videoRef.current) {
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else {
+            await videoRef.current.requestPictureInPicture();
+          }
+        }
+      };
+      const changePlaybackRate = (rate) => {
+        setPlaybackRate(rate);
+        if (videoRef.current) videoRef.current.playbackRate = rate;
       };
 
       return (
         <div 
-          className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-300 select-none" 
+          className="fixed inset-0 z-50 bg-stone-950/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-300 select-none" 
           onClick={closeLightbox}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
           <div className="absolute top-0 left-0 w-full h-1 bg-white/10 z-50">
-            <div 
-              key={currentPhotoIndex}
-              className={`h-full bg-blue-500 ${slideshowInterval ? 'animate-progress' : 'w-0'}`} 
-              style={{ width: slideshowInterval ? '100%' : '0' }}
-            ></div>
+            <div key={currentPhotoIndex} className={`h-full bg-amber-500 ${slideshowInterval ? 'animate-progress' : 'w-0'}`} style={{ width: slideshowInterval ? '100%' : '0' }}></div>
           </div>
 
           <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-50 pointer-events-none">
@@ -1795,23 +1607,11 @@
               {currentPhotoIndex+1} / {currentGallery.length}
             </span>
             <div className="flex items-center gap-2 pointer-events-auto">
-              <button onClick={toggleSlideshow} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition">
-                <i className={`fa-solid ${slideshowInterval ? 'fa-pause' : 'fa-play'} text-sm`}></i>
-              </button>
-              <button onClick={() => toggleFavorite(filename)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition">
-                <i className={`fa-${isFav ? 'solid text-red-500' : 'regular'} fa-heart text-lg`}></i>
-              </button>
-              {showDelete && (
-                <button onClick={deleteCurrentImage} className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/80 border border-white/10 text-white transition">
-                  <i className="fa-solid fa-trash text-sm"></i>
-                </button>
-              )}
-              <button onClick={() => { const a = document.createElement('a'); a.href = src; a.download = filename; a.click(); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition">
-                <i className="fa-solid fa-download text-sm"></i>
-              </button>
-              <button onClick={closeLightbox} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition">
-                <i className="fa-solid fa-xmark"></i>
-              </button>
+              <button onClick={toggleSlideshow} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition"><i className={`fa-solid ${slideshowInterval ? 'fa-pause' : 'fa-play'} text-sm`}></i></button>
+              <button onClick={() => toggleFavorite(filename)} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition"><i className={`fa-${isFav ? 'solid text-red-500' : 'regular'} fa-heart text-lg`}></i></button>
+              {showDelete && <button onClick={deleteCurrentImage} className="w-10 h-10 rounded-full bg-white/10 hover:bg-red-500/80 border border-white/10 text-white transition"><i className="fa-solid fa-trash text-sm"></i></button>}
+              <button onClick={() => { const a = document.createElement('a'); a.href = src; a.download = filename; a.click(); }} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition"><i className="fa-solid fa-download text-sm"></i></button>
+              <button onClick={closeLightbox} className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition"><i className="fa-solid fa-xmark"></i></button>
             </div>
           </div>
 
@@ -1819,17 +1619,11 @@
             <button onClick={handleZoomOut} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm">−</button>
             <span className="text-white text-xs px-1">{Math.round(zoomScale * 100)}%</span>
             <button onClick={handleZoomIn} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm">+</button>
-            <button onClick={handleZoomReset} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs ml-1">
-              <i className="fa-solid fa-arrows-to-circle"></i>
-            </button>
+            <button onClick={handleZoomReset} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs ml-1"><i className="fa-solid fa-arrows-to-circle"></i></button>
           </div>
 
-          <button onClick={(e) => { e.stopPropagation(); prevImage(); }} className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center z-50 backdrop-blur-md transition group active:scale-95">
-            <i className="fa-solid fa-chevron-left text-xl group-hover:-translate-x-0.5 transition-transform"></i>
-          </button>
-          <button onClick={(e) => { e.stopPropagation(); nextImage(); }} className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center z-50 backdrop-blur-md transition group active:scale-95">
-            <i className="fa-solid fa-chevron-right text-xl group-hover:translate-x-0.5 transition-transform"></i>
-          </button>
+          <button onClick={(e) => { e.stopPropagation(); prevImage(); }} className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center z-50 backdrop-blur-md transition group active:scale-95"><i className="fa-solid fa-chevron-left text-xl group-hover:-translate-x-0.5 transition-transform"></i></button>
+          <button onClick={(e) => { e.stopPropagation(); nextImage(); }} className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center z-50 backdrop-blur-md transition group active:scale-95"><i className="fa-solid fa-chevron-right text-xl group-hover:translate-x-0.5 transition-transform"></i></button>
 
           <div 
             className="relative w-full h-full flex items-center justify-center p-4 sm:px-20 overflow-hidden"
@@ -1837,7 +1631,54 @@
             ref={containerRef}
           >
             {isVideo ? (
-              <video src={src} controls className="max-h-full max-w-full rounded-lg shadow-2xl shadow-black/50" autoPlay />
+              <div className="relative max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl shadow-black/50 overflow-hidden">
+                <video 
+                  ref={videoRef}
+                  src={src} 
+                  className="max-h-[90vh] max-w-[90vw] object-contain"
+                  onClick={toggleVideoPlay}
+                  onTimeUpdate={handleVideoTimeUpdate}
+                  onLoadedMetadata={handleVideoTimeUpdate}
+                  onPlay={() => setVideoPlaying(true)}
+                  onPause={() => setVideoPlaying(false)}
+                  onEnded={() => setVideoPlaying(false)}
+                />
+                {/* Custom video controls with PiP and speed */}
+                <div className="video-controls absolute bottom-0 left-0 w-full p-3 opacity-0 hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 text-white">
+                    <button onClick={toggleVideoPlay} className="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-700 flex items-center justify-center">
+                      <i className={`fa-solid ${videoPlaying ? 'fa-pause' : 'fa-play'} text-xs`}></i>
+                    </button>
+                    <span className="text-xs font-mono">{formatTime(videoProgress)}</span>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max={videoDuration || 0} 
+                      value={videoProgress} 
+                      onChange={(e) => seekVideo(parseFloat(e.target.value))}
+                      className="video-progress flex-1"
+                      style={{ '--value': `${(videoProgress / videoDuration) * 100}%` }}
+                    />
+                    <span className="text-xs font-mono">{formatTime(videoDuration)}</span>
+                    <div className="flex items-center gap-1">
+                      <i className="fa-solid fa-volume-high text-sm"></i>
+                      <input type="range" min="0" max="1" step="0.01" value={videoVolume} onChange={(e) => handleVideoVolume(parseFloat(e.target.value))} className="volume-slider" />
+                    </div>
+                    <select value={playbackRate} onChange={(e) => changePlaybackRate(parseFloat(e.target.value))} className="bg-black/50 text-white text-xs rounded border border-white/20 p-1">
+                      <option value="0.5">0.5x</option>
+                      <option value="1">1x</option>
+                      <option value="1.5">1.5x</option>
+                      <option value="2">2x</option>
+                    </select>
+                    <button onClick={togglePiP} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                      <i className="fa-solid fa-clipboard text-xs"></i>
+                    </button>
+                    <button onClick={() => videoRef.current?.requestFullscreen()} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+                      <i className="fa-solid fa-expand text-xs"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div 
                 className="zoom-container"
@@ -1845,12 +1686,7 @@
                 onMouseDown={handleMouseDown}
                 onDoubleClick={handleDoubleClick}
               >
-                <img 
-                  src={src} 
-                  alt="" 
-                  className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl shadow-black/50 select-none"
-                  draggable="false"
-                />
+                <img src={src} alt="" className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl shadow-black/50 select-none" draggable="false" />
               </div>
             )}
             <div className="absolute bottom-8 text-center w-full px-12 pointer-events-none">
@@ -1863,18 +1699,18 @@
 
     const Toast = ({ show, msg, type }) => { 
       if (!show) return null; 
-      const bg = type === 'success' ? 'bg-emerald-600/95' : 'bg-red-600/95'; 
+      const bg = type === 'success' ? 'bg-emerald-700/95' : 'bg-rose-700/95'; 
       return (<div className={`fixed ${type === 'success' ? 'bottom-6' : 'top-6'} left-1/2 -translate-x-1/2 ${bg} text-white px-6 py-3 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-3 transition-all duration-500 z-[80]`}><i className={`fa-solid ${type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation'}`}></i><span className="font-bold text-xs">{msg}</span></div>); 
     };
 
     const Footer = () => {
-      const { getAllVisiblePhotos, favorites, deletedImages } = useContext(AppContext);
+      const { getAllVisiblePhotos, favorites, deletedMedia } = useContext(AppContext);
       const total = getAllVisiblePhotos().length;
       return (
-        <footer className="w-full py-8 mt-auto border-t border-slate-200 dark:border-slate-800 text-center">
+        <footer className="w-full py-8 mt-auto border-t border-amber-200 dark:border-amber-900/30 text-center">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{total} Photos · {favorites.size} Favorites · Trash {deletedImages.length}</span>
-            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Smart Gallery · React PWA</span>
+            <span className="text-sm font-semibold text-stone-900 dark:text-amber-100">{total} Items · {favorites.size} Favorites · Trash {deletedMedia.length}</span>
+            <span className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Nova Gallery · Imperial Edition</span>
           </div>
         </footer>
       );
