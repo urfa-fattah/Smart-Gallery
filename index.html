@@ -264,13 +264,6 @@
             border: 1px solid #ffd70040;
         }
 
-        /* Swipe hint */
-        @media (hover: none) and (pointer: coarse) {
-            .zoom-container {
-                cursor: default;
-            }
-        }
-
         /* Smooth mobile tap */
         .photo-action-btn {
             -webkit-tap-highlight-color: transparent;
@@ -294,6 +287,62 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef, createContext, useContext, useMemo } = React;
 
+        // ---------- SECURITY: PBKDF2 helpers ----------
+        async function deriveKeyPBKDF2(password, salt, iterations = 100000) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                enc.encode(password),
+                'PBKDF2',
+                false,
+                ['deriveBits']
+            );
+            const saltBytes = typeof salt === 'string' ? new Uint8Array(salt.match(/.{1,2}/g).map(byte => parseInt(byte, 16))) : salt;
+            const derivedBits = await crypto.subtle.deriveBits(
+                {
+                    name: 'PBKDF2',
+                    salt: saltBytes,
+                    iterations: iterations,
+                    hash: 'SHA-256'
+                },
+                keyMaterial,
+                256
+            );
+            return Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function generateSalt() {
+            return Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function hashPasswordPBKDF2(password) {
+            const salt = generateSalt();
+            const hash = await deriveKeyPBKDF2(password, salt);
+            return { hash, salt };
+        }
+
+        async function verifyPasswordPBKDF2(password, stored) {
+            if (!stored || typeof stored !== 'object' || !stored.salt || !stored.hash) {
+                // fallback to old SHA-256 (string stored)
+                if (typeof stored === 'string' && stored.length === 64) {
+                    const oldHash = await hashStringSHA256(password);
+                    return oldHash === stored;
+                }
+                return false;
+            }
+            const hash = await deriveKeyPBKDF2(password, stored.salt);
+            return hash === stored.hash;
+        }
+
+        // old SHA-256 (kept for backward compatibility)
+        async function hashStringSHA256(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // ---------- INDEXED DB ----------
         const DB_NAME = 'NovaGalleryDB';
         const DB_VERSION = 6;
@@ -308,12 +357,9 @@
                 request.onsuccess = () => resolve(request.result);
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_MEDIA)) db.createObjectStore(STORE_MEDIA, {
-                        keyPath: 'filename' });
-                    if (!db.objectStoreNames.contains(STORE_THUMBS)) db.createObjectStore(STORE_THUMBS, {
-                        keyPath: 'album' });
-                    if (!db.objectStoreNames.contains(STORE_AUDIO)) db.createObjectStore(STORE_AUDIO, {
-                        keyPath: 'id' });
+                    if (!db.objectStoreNames.contains(STORE_MEDIA)) db.createObjectStore(STORE_MEDIA, { keyPath: 'filename' });
+                    if (!db.objectStoreNames.contains(STORE_THUMBS)) db.createObjectStore(STORE_THUMBS, { keyPath: 'album' });
+                    if (!db.objectStoreNames.contains(STORE_AUDIO)) db.createObjectStore(STORE_AUDIO, { keyPath: 'id' });
                 };
             });
         }
@@ -336,10 +382,8 @@
                 const tx = db.transaction(storeName, 'readwrite');
                 const store = tx.objectStore(storeName);
                 store.put(item);
-                tx.oncomplete = () => { db.close();
-                    resolve(); };
-                tx.onerror = () => { db.close();
-                    reject(tx.error); };
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
             });
         }
 
@@ -349,10 +393,8 @@
                 const tx = db.transaction(storeName, 'readwrite');
                 const store = tx.objectStore(storeName);
                 store.delete(key);
-                tx.oncomplete = () => { db.close();
-                    resolve(); };
-                tx.onerror = () => { db.close();
-                    reject(tx.error); };
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
             });
         }
 
@@ -363,14 +405,6 @@
         // ---------- UTILS ----------
         const PATH_TO_IMAGES = 'images/';
         const PATH_TO_THUMBS = 'thumbnails/';
-
-        async function hashString(str) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
 
         function readFileAsDataURL(file) {
             return new Promise((resolve, reject) => {
@@ -412,6 +446,15 @@
         const formatTime = (sec) => isNaN(sec) || !isFinite(sec) ? '0:00' :
             `${Math.floor(sec / 60)}:${Math.floor(sec % 60).toString().padStart(2, '0')}`;
 
+        // Extract album name from filename (e.g., "Maria-123.jpg" -> "Maria")
+        function getAlbumFromFilename(filename) {
+            if (!filename) return null;
+            const clean = filename.trim();
+            let prefix = clean.includes('-') ? clean.split('-')[0] : clean.split('_')[0] || '';
+            prefix = prefix.trim();
+            return prefix || null;
+        }
+
         // ---------- GLOBAL CONTEXT ----------
         const AppContext = createContext();
 
@@ -422,14 +465,10 @@
             const [thumbnailMap, setThumbnailMap] = useState({});
             const [uploadedMedia, setUploadedMedia] = useState([]);
             const [uploadedThumbnails, setUploadedThumbnails] = useState({});
-            const [favorites, setFavorites] = useState(() => new Set(JSON.parse(localStorage.getItem(
-                'sg_favorites') || '[]')));
-            const [deletedMedia, setDeletedMedia] = useState(() => JSON.parse(localStorage.getItem('sg_deleted') ||
-                '[]'));
-            const [hiddenAlbums, setHiddenAlbums] = useState(() => JSON.parse(localStorage.getItem('sg_hidden') ||
-                '{}'));
-            const [viewSettings, setViewSettings] = useState(() => JSON.parse(localStorage.getItem('sg_view') ||
-                '{"type":"masonry","size":"medium","showInfo":false}'));
+            const [favorites, setFavorites] = useState(() => new Set(JSON.parse(localStorage.getItem('sg_favorites') || '[]')));
+            const [deletedMedia, setDeletedMedia] = useState(() => JSON.parse(localStorage.getItem('sg_deleted') || '[]'));
+            const [hiddenAlbums, setHiddenAlbums] = useState(() => JSON.parse(localStorage.getItem('sg_hidden') || '{}'));
+            const [viewSettings, setViewSettings] = useState(() => JSON.parse(localStorage.getItem('sg_view') || '{"type":"masonry","size":"medium","showInfo":false}'));
             const [albumSortOrder, setAlbumSortOrder] = useState('asc');
 
             // Audio state
@@ -442,9 +481,16 @@
             const [audioVolume, setAudioVolume] = useState(1);
             const [audioLoop, setAudioLoop] = useState(false);
 
-            // Master password
-            const [masterPasswordHash, setMasterPasswordHash] = useState(() => localStorage.getItem(
-            'sg_master_hash'));
+            // Master password (now stored as {hash, salt} or legacy string)
+            const [masterPassword, setMasterPasswordState] = useState(() => {
+                const raw = localStorage.getItem('sg_master_hash');
+                if (!raw) return null;
+                try {
+                    const parsed = JSON.parse(raw);
+                    return (parsed && typeof parsed === 'object' && parsed.hash && parsed.salt) ? parsed : raw;
+                } catch { return raw; }
+            });
+
             const [hiddenPortalAuth, setHiddenPortalAuth] = useState(false);
 
             // People data
@@ -465,6 +511,7 @@
 
             // Modals
             const [uploadModalOpen, setUploadModalOpen] = useState(false);
+            const [uploadAlbum, setUploadAlbum] = useState(null); // preselected album for upload
             const [hideModalOpen, setHideModalOpen] = useState(false);
             const [albumToHide, setAlbumToHide] = useState(null);
             const [backupCodesModalOpen, setBackupCodesModalOpen] = useState(false);
@@ -498,8 +545,7 @@
                         const thumbMap = await thumbRes.json();
                         setRawFileList([...new Set(fileList)]);
                         setThumbnailMap(thumbMap);
-                    } catch { setRawFileList([]);
-                        setThumbnailMap({}); }
+                    } catch { setRawFileList([]); setThumbnailMap({}); }
                 }
                 loadData();
             }, []);
@@ -515,25 +561,26 @@
                         setUploadedThumbnails(thumbObj);
                         const audio = await getAllAudio();
                         setUploadedAudio(audio || []);
-                    } catch { setUploadedMedia([]);
-                        setUploadedThumbnails({});
-                        setUploadedAudio([]); }
+                    } catch { setUploadedMedia([]); setUploadedThumbnails({}); setUploadedAudio([]); }
                 }
                 loadUploaded();
             }, []);
 
-            useEffect(() => { uploadedMedia.forEach(m => putItemInStore(STORE_MEDIA, m).catch(() => {})); }, [
-                uploadedMedia]);
-            useEffect(() => { Object.entries(uploadedThumbnails).forEach(([album, dataURL]) => putItemInStore(
-                    STORE_THUMBS, { album, dataURL }).catch(() => {})); }, [uploadedThumbnails]);
+            useEffect(() => { uploadedMedia.forEach(m => putItemInStore(STORE_MEDIA, m).catch(() => {})); }, [uploadedMedia]);
+            useEffect(() => { Object.entries(uploadedThumbnails).forEach(([album, dataURL]) => putItemInStore(STORE_THUMBS, { album, dataURL }).catch(() => {})); }, [uploadedThumbnails]);
             useEffect(() => { uploadedAudio.forEach(a => putAudio(a).catch(() => {})); }, [uploadedAudio]);
 
             useEffect(() => { localStorage.setItem('sg_favorites', JSON.stringify([...favorites])); }, [favorites]);
             useEffect(() => { localStorage.setItem('sg_deleted', JSON.stringify(deletedMedia)); }, [deletedMedia]);
             useEffect(() => { localStorage.setItem('sg_hidden', JSON.stringify(hiddenAlbums)); }, [hiddenAlbums]);
             useEffect(() => { localStorage.setItem('sg_view', JSON.stringify(viewSettings)); }, [viewSettings]);
-            useEffect(() => { masterPasswordHash ? localStorage.setItem('sg_master_hash', masterPasswordHash) :
-                localStorage.removeItem('sg_master_hash'); }, [masterPasswordHash]);
+            useEffect(() => {
+                if (masterPassword) {
+                    localStorage.setItem('sg_master_hash', typeof masterPassword === 'string' ? masterPassword : JSON.stringify(masterPassword));
+                } else {
+                    localStorage.removeItem('sg_master_hash');
+                }
+            }, [masterPassword]);
 
             // Cleanup audio on unmount
             useEffect(() => {
@@ -547,10 +594,16 @@
                 };
             }, []);
 
-            const effectiveThumbnailMap = useMemo(() => ({ ...thumbnailMap, ...uploadedThumbnails }), [thumbnailMap,
-                uploadedThumbnails
-            ]);
+            const effectiveThumbnailMap = useMemo(() => ({ ...thumbnailMap, ...uploadedThumbnails }), [thumbnailMap, uploadedThumbnails]);
 
+            // Helper to check if album is visible (not hidden or unlocked)
+            const isAlbumVisible = useCallback((albumName) => {
+                if (!albumName) return true;
+                if (!hiddenAlbums[albumName]) return true;
+                return unlockedHidden.has(albumName);
+            }, [hiddenAlbums, unlockedHidden]);
+
+            // Build people data and also used to filter visible photos
             useEffect(() => {
                 const allFiles = [...rawFileList];
                 const activeMedia = uploadedMedia.filter(m => !deletedMedia.some(d => d.filename === m.filename));
@@ -559,9 +612,10 @@
                 allFiles.forEach(filename => {
                     const cleanFile = filename.trim();
                     if (!cleanFile) return;
-                    let namePart = cleanFile.includes('-') ? cleanFile.split('-')[0] : cleanFile.split(
-                        '_')[0] || '';
+                    let namePart = getAlbumFromFilename(filename);
                     if (!namePart) return;
+                    // skip 'Img' and 'Picsart' as people names? We'll include them as albums but exclude from people?
+                    // We'll just add them to pd but later they'll be treated as albums anyway.
                     let people = namePart.split('+');
                     people.forEach(rawName => {
                         let cleanName = rawName.trim();
@@ -591,30 +645,35 @@
                 return thumbSrc;
             };
 
+            // Updated: filter out photos from hidden albums (unless unlocked)
             const getAllVisiblePhotos = useCallback(() => {
-                const all = [...rawFileList];
+                const all = [];
+                // add raw file list
+                rawFileList.forEach(f => {
+                    const album = getAlbumFromFilename(f);
+                    if (album && !isAlbumVisible(album)) return;
+                    all.push(f);
+                });
+                // add uploaded media (not deleted, not hidden album)
                 uploadedMedia.forEach(m => {
-                    if (!deletedMedia.some(d => d.filename === m.filename) && !all.includes(m.filename)) {
-                        all.push(m.filename);
-                    }
+                    if (deletedMedia.some(d => d.filename === m.filename)) return;
+                    if (m.album && !isAlbumVisible(m.album)) return;
+                    if (!all.includes(m.filename)) all.push(m.filename);
                 });
                 return all;
-            }, [rawFileList, uploadedMedia, deletedMedia]);
+            }, [rawFileList, uploadedMedia, deletedMedia, isAlbumVisible]);
 
             const isAlbumHidden = (name) => !!hiddenAlbums[name];
             const getAlbumPhotoCount = (albumName) => {
                 let count = 0;
-                rawFileList.forEach(f => { if (f.startsWith(albumName + '-') || f.startsWith(albumName + '_'))
-                        count++; });
-                uploadedMedia.forEach(m => { if (m.album === albumName && !deletedMedia.some(d => d.filename ===
-                        m.filename)) count++; });
+                rawFileList.forEach(f => { if (getAlbumFromFilename(f) === albumName) count++; });
+                uploadedMedia.forEach(m => { if (m.album === albumName && !deletedMedia.some(d => d.filename === m.filename)) count++; });
                 return count;
             };
 
             // Favorites
             const toggleFavorite = (filename) => {
-                setFavorites(prev => { const s = new Set(prev);
-                    s.has(filename) ? s.delete(filename) : s.add(filename); return s; });
+                setFavorites(prev => { const s = new Set(prev); s.has(filename) ? s.delete(filename) : s.add(filename); return s; });
             };
             const openFavoriteLightbox = (filename) => {
                 const favs = getAllVisiblePhotos().filter(f => favorites.has(f));
@@ -624,8 +683,7 @@
                 setGalleryContext('favorites');
                 setCurrentGallery(favs);
                 setActiveView('gallery');
-                setTimeout(() => { setCurrentPhotoIndex(index);
-                    setLightboxOpen(true); }, 10);
+                setTimeout(() => { setCurrentPhotoIndex(index); setLightboxOpen(true); }, 10);
             };
 
             // Trash
@@ -634,11 +692,9 @@
                 if (!media) return;
                 setUploadedMedia(prev => prev.filter(i => i.filename !== filename));
                 setDeletedMedia(prev => [...prev, { ...media, deletedAt: new Date().toISOString() }]);
-                setFavorites(prev => { const s = new Set(prev);
-                    s.delete(filename); return s; });
+                setFavorites(prev => { const s = new Set(prev); s.delete(filename); return s; });
                 showToast('Moved to trash');
-                if (currentGallery.includes(filename)) setCurrentGallery(prev => prev.filter(f => f !==
-                    filename));
+                if (currentGallery.includes(filename)) setCurrentGallery(prev => prev.filter(f => f !== filename));
                 if (lightboxOpen && currentGallery[currentPhotoIndex] === filename) closeLightbox();
             };
             const restoreUploadedMedia = (filename) => {
@@ -662,25 +718,31 @@
                 }
             };
 
-            // Hidden albums
+            // Hidden albums (now with PBKDF2)
             const generateBackupCodes = () => {
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                return Array.from({ length: 5 }, () => Array.from({ length: 8 }, () => chars[Math.floor(Math
-                    .random() * chars.length)]).join(''));
+                return Array.from({ length: 5 }, () => Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join(''));
             };
             const hideAlbum = async (albumName, password, question, answer) => {
                 if (isAlbumHidden(albumName)) return false;
-                const hashedPassword = await hashString(password);
-                const hashedAnswer = await hashString(answer.toLowerCase());
+                const passwordObj = await hashPasswordPBKDF2(password);
+                const answerObj = await hashPasswordPBKDF2(answer.toLowerCase());
                 const codes = generateBackupCodes();
-                setHiddenAlbums(prev => ({ ...prev, [albumName]: { password: hashedPassword, question,
-                        answer: hashedAnswer, backupCodes: codes, hiddenAt: new Date().toISOString() } }));
+                setHiddenAlbums(prev => ({
+                    ...prev,
+                    [albumName]: {
+                        password: passwordObj,        // {hash, salt}
+                        answer: answerObj,            // {hash, salt}
+                        question,
+                        backupCodes: codes,
+                        hiddenAt: new Date().toISOString()
+                    }
+                }));
                 return codes;
             };
             const unhideAlbum = (albumName) => {
                 setHiddenAlbums(prev => { const { [albumName]: _, ...rest } = prev; return rest; });
-                setUnlockedHidden(prev => { const s = new Set(prev);
-                    s.delete(albumName); return s; });
+                setUnlockedHidden(prev => { const s = new Set(prev); s.delete(albumName); return s; });
                 showToast(`"${albumName}" is now visible`);
             };
             const useBackupCode = (albumName, code) => {
@@ -689,8 +751,7 @@
                 const idx = album.backupCodes.indexOf(code);
                 if (idx !== -1) {
                     album.backupCodes.splice(idx, 1);
-                    setHiddenAlbums(prev => ({ ...prev, [albumName]: { ...album, backupCodes: [...album
-                            .backupCodes] } }));
+                    setHiddenAlbums(prev => ({ ...prev, [albumName]: { ...album, backupCodes: [...album.backupCodes] } }));
                     return true;
                 }
                 return false;
@@ -703,18 +764,26 @@
                 setHiddenAlbums(prev => ({ ...prev, [albumName]: { ...album } }));
                 return newCodes;
             };
-            const promptUnlockAlbum = (albumName) => { setAlbumToUnlock(albumName);
-                setUnlockModalOpen(true); };
+            const promptUnlockAlbum = (albumName) => { setAlbumToUnlock(albumName); setUnlockModalOpen(true); };
 
-            // Master password
-            const setMasterPassword = async (password) => { const hash = await hashString(password);
-                setMasterPasswordHash(hash);
+            // Master password (with PBKDF2)
+            const setMasterPassword = async (password) => {
+                const obj = await hashPasswordPBKDF2(password);
+                setMasterPasswordState(obj);
                 setHiddenPortalAuth(true);
-                setActiveView('hiddenPortal'); };
-            const verifyMasterPassword = async (password) => masterPasswordHash && (await hashString(password)) ===
-                masterPasswordHash;
-            const changeMasterPassword = async (oldPassword, newPassword) => (await verifyMasterPassword(oldPassword)) ?
-                (await setMasterPassword(newPassword), true) : false;
+                setActiveView('hiddenPortal');
+            };
+            const verifyMasterPassword = async (password) => {
+                if (!masterPassword) return false;
+                return verifyPasswordPBKDF2(password, masterPassword);
+            };
+            const changeMasterPassword = async (oldPassword, newPassword) => {
+                if (await verifyMasterPassword(oldPassword)) {
+                    await setMasterPassword(newPassword);
+                    return true;
+                }
+                return false;
+            };
 
             // Uploads
             const handleMediaUpload = async (album, files) => {
@@ -725,8 +794,7 @@
                     const random = Math.floor(Math.random() * 1000);
                     const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
                     const filename = `${album}-${timestamp}-${random}.${ext}`;
-                    const newMedia = { filename, dataURL, album, date: new Date().toISOString(), type: isVideo ?
-                            'video' : 'image' };
+                    const newMedia = { filename, dataURL, album, date: new Date().toISOString(), type: isVideo ? 'video' : 'image' };
                     setUploadedMedia(prev => [...prev, newMedia]);
 
                     if (isVideo) {
@@ -750,8 +818,7 @@
                     const arrayBuffer = await file.arrayBuffer();
                     const blob = new Blob([arrayBuffer], { type: file.type });
                     const id = `audio-${Date.now()}-${Math.random().toString(36).substring(2)}`;
-                    setUploadedAudio(prev => [...prev, { id, blob, name: file.name, date: new Date()
-                            .toISOString(), size: file.size, type: file.type }]);
+                    setUploadedAudio(prev => [...prev, { id, blob, name: file.name, date: new Date().toISOString(), size: file.size, type: file.type }]);
                 }
                 showToast(`${files.length} audio(s) uploaded`);
             };
@@ -785,32 +852,23 @@
                 audioEl.volume = audioVolume;
                 audioEl.addEventListener('timeupdate', () => setAudioProgress(audioEl.currentTime));
                 audioEl.addEventListener('loadedmetadata', () => setAudioDuration(audioEl.duration));
-                audioEl.addEventListener('ended', () => { setAudioPlaying(false);
-                    setAudioProgress(0); });
-                audioEl.addEventListener('error', () => { setAudioPlaying(false);
-                    showToast('Audio playback error', 'error'); });
-                audioEl.play().catch(() => { setAudioPlaying(false);
-                    showToast('Unable to play audio', 'error'); });
+                audioEl.addEventListener('ended', () => { setAudioPlaying(false); setAudioProgress(0); });
+                audioEl.addEventListener('error', () => { setAudioPlaying(false); showToast('Audio playback error', 'error'); });
+                audioEl.play().catch(() => { setAudioPlaying(false); showToast('Unable to play audio', 'error'); });
                 setCurrentAudioId(audio.id);
                 setAudioPlaying(true);
             };
-            const pauseAudio = () => { if (audioRef.current) { audioRef.current.pause();
-                    setAudioPlaying(false); } };
-            const resumeAudio = () => { if (audioRef.current && currentAudioId) { audioRef.current.play().catch(() =>
-                    showToast('Unable to resume', 'error'));
-                    setAudioPlaying(true); } };
-            const stopAudio = () => { if (audioRef.current) { audioRef.current.pause();
-                    audioRef.current.currentTime = 0;
-                    setAudioPlaying(false);
-                    setAudioProgress(0); } };
-            const seekAudio = (time) => { if (audioRef.current) { audioRef.current.currentTime = time;
-                    setAudioProgress(time); } };
+            const pauseAudio = () => { if (audioRef.current) { audioRef.current.pause(); setAudioPlaying(false); } };
+            const resumeAudio = () => { if (audioRef.current && currentAudioId) { audioRef.current.play().catch(() => showToast('Unable to resume', 'error')); setAudioPlaying(true); } };
+            const stopAudio = () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; setAudioPlaying(false); setAudioProgress(0); } };
+            const dismissAudio = () => {
+                stopAudio();
+                setCurrentAudioId(null);
+            };
+            const seekAudio = (time) => { if (audioRef.current) { audioRef.current.currentTime = time; setAudioProgress(time); } };
             const setVolume = (vol) => { setAudioVolume(vol); if (audioRef.current) audioRef.current.volume = vol; };
-            const toggleLoop = () => { setAudioLoop(prev => !prev); if (audioRef.current) audioRef.current.loop = !
-                audioLoop; };
-            const currentAudioFile = useMemo(() => uploadedAudio.find(a => a.id === currentAudioId), [uploadedAudio,
-                currentAudioId
-            ]);
+            const toggleLoop = () => { setAudioLoop(prev => !prev); if (audioRef.current) audioRef.current.loop = !audioLoop; };
+            const currentAudioFile = useMemo(() => uploadedAudio.find(a => a.id === currentAudioId), [uploadedAudio, currentAudioId]);
 
             // Gallery navigation
             const openGallery = (albumName, photos, context) => {
@@ -829,42 +887,31 @@
                 if (name === 'Trash') openGallery('Trash', deletedMedia.map(i => i.filename), 'trash');
                 else if (name === 'Recent Uploads') {
                     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                    const recent = uploadedMedia.filter(m => new Date(m.date).getTime() > sevenDaysAgo);
+                    const recent = uploadedMedia.filter(m => new Date(m.date).getTime() > sevenDaysAgo && isAlbumVisible(m.album));
                     openGallery('Recent Uploads', recent.map(m => m.filename), 'recent');
-                } else if (name === 'Favorites') openGallery('Favorites', getAllVisiblePhotos().filter(f => favorites
-                    .has(f)), 'favorites');
+                } else if (name === 'Favorites') openGallery('Favorites', getAllVisiblePhotos().filter(f => favorites.has(f)), 'favorites');
                 else if (name === 'All Photos') openGallery('All Photos', getAllVisiblePhotos(), 'all');
                 else {
                     const data = peopleData[name];
-                    if (data) openGallery(name, data.photos, 'album');
+                    if (data) openGallery(name, data.photos.filter(f => isAlbumVisible(getAlbumFromFilename(f))), 'album');
                 }
             };
             const handleAlbumClick = (name) => { isAlbumHidden(name) ? promptUnlockAlbum(name) : showAlbum(name); };
 
-            // Lightbox
-            const openLightbox = (index) => { setCurrentPhotoIndex(index);
-                setLightboxOpen(true);
-                setZoomScale(1);
-                setZoomTranslate({ x: 0, y: 0 }); };
-            const closeLightbox = () => { setLightboxOpen(false); if (slideshowInterval) { clearInterval(
-                    slideshowInterval);
-                    setSlideshowInterval(null); } };
-            const nextImage = () => { setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length);
-                setZoomScale(1);
-                setZoomTranslate({ x: 0, y: 0 }); };
-            const prevImage = () => { setCurrentPhotoIndex(prev => (prev - 1 + currentGallery.length) %
-                currentGallery.length);
-                setZoomScale(1);
-                setZoomTranslate({ x: 0, y: 0 }); };
-            const toggleSlideshow = () => {
-                if (slideshowInterval) { clearInterval(slideshowInterval);
-                    setSlideshowInterval(null); } else { nextImage(); const int = setInterval(() => {
-                        setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length);
-                        setZoomScale(1);
-                        setZoomTranslate({ x: 0, y: 0 }); }, 3000);
-                    setSlideshowInterval(int); }
+            // Open upload modal pre-filled with album name
+            const openUploadForAlbum = (albumName) => {
+                setUploadAlbum(albumName);
+                setUploadModalOpen(true);
             };
 
+            // Lightbox
+            const openLightbox = (index) => { setCurrentPhotoIndex(index); setLightboxOpen(true); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+            const closeLightbox = () => { setLightboxOpen(false); if (slideshowInterval) { clearInterval(slideshowInterval); setSlideshowInterval(null); } };
+            const nextImage = () => { setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+            const prevImage = () => { setCurrentPhotoIndex(prev => (prev - 1 + currentGallery.length) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
+            const toggleSlideshow = () => {
+                if (slideshowInterval) { clearInterval(slideshowInterval); setSlideshowInterval(null); } else { nextImage(); const int = setInterval(() => { setCurrentPhotoIndex(prev => (prev + 1) % currentGallery.length); setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); }, 3000); setSlideshowInterval(int); }
+            };
             const deleteCurrentImage = () => {
                 if (currentGallery.length && currentPhotoIndex >= 0) {
                     const filename = currentGallery[currentPhotoIndex];
@@ -890,8 +937,7 @@
                 });
             };
             const handleZoomOut = () => setZoomScale(prev => Math.max(prev - 0.5, 1));
-            const handleZoomReset = () => { setZoomScale(1);
-                setZoomTranslate({ x: 0, y: 0 }); };
+            const handleZoomReset = () => { setZoomScale(1); setZoomTranslate({ x: 0, y: 0 }); };
 
             const containerRef = useRef(null);
 
@@ -916,8 +962,7 @@
                 if (selectedItems.size === 0) return;
                 if (confirm(`Delete ${selectedItems.size} item(s)?`)) {
                     selectedItems.forEach(filename => {
-                        if (uploadedMedia.some(m => m.filename === filename)) deleteUploadedMedia(
-                        filename);
+                        if (uploadedMedia.some(m => m.filename === filename)) deleteUploadedMedia(filename);
                     });
                     clearSelection();
                 }
@@ -972,6 +1017,7 @@
                 pauseAudio,
                 resumeAudio,
                 stopAudio,
+                dismissAudio,
                 seekAudio,
                 setVolume,
                 toggleLoop,
@@ -981,6 +1027,7 @@
                 getAllVisiblePhotos,
                 getThumbUrl,
                 isAlbumHidden,
+                isAlbumVisible,
                 getAlbumPhotoCount,
                 toggleFavorite,
                 deleteUploadedMedia,
@@ -1000,6 +1047,7 @@
                 toggleSlideshow,
                 deleteCurrentImage,
                 openFavoriteLightbox,
+                openUploadForAlbum,
                 setAlbumSortOrder,
                 updateViewSetting,
                 handleMediaUpload,
@@ -1011,6 +1059,7 @@
                 setGalleryContext,
                 showToast,
                 setUploadModalOpen,
+                setUploadAlbum,
                 setHideModalOpen,
                 setAlbumToHide,
                 setBackupCodesModalOpen,
@@ -1018,7 +1067,7 @@
                 setUnlockModalOpen,
                 setAlbumToUnlock,
                 promptUnlockAlbum,
-                masterPasswordHash,
+                masterPassword,
                 hiddenPortalAuth,
                 setHiddenPortalAuth,
                 setMasterPassword,
@@ -1051,8 +1100,12 @@
                         <Footer />
                     </div>
 
-                    <UploadModal isOpen={uploadModalOpen} onClose={() => setUploadModalOpen(false)} onMediaUpload={handleMediaUpload}
-                        onThumbnailUpload={handleThumbnailUpload} onAudioUpload={handleAudioUpload} albumSuggestions={albumSuggestions} />
+                    <UploadModal isOpen={uploadModalOpen} onClose={() => { setUploadModalOpen(false); setUploadAlbum(null); }}
+                        onMediaUpload={handleMediaUpload}
+                        onThumbnailUpload={handleThumbnailUpload}
+                        onAudioUpload={handleAudioUpload}
+                        albumSuggestions={albumSuggestions}
+                        preselectedAlbum={uploadAlbum} />
                     <HideAlbumModal isOpen={hideModalOpen} onClose={() => setHideModalOpen(false)} albumName={albumToHide} />
                     <BackupCodesModal isOpen={backupCodesModalOpen} onClose={() => setBackupCodesModalOpen(false)} codes={currentBackupCodes} />
                     <UnlockAlbumModal isOpen={unlockModalOpen} onClose={() => setUnlockModalOpen(false)} albumName={albumToUnlock} />
@@ -1066,26 +1119,19 @@
 
         // ---------- NAVBAR ----------
         const Navbar = () => {
-            const { setActiveView, setUploadModalOpen, setAlbumSortOrder, albumSortOrder, showToast, hiddenPortalAuth,
+            const { setActiveView, setUploadModalOpen, setUploadAlbum, setAlbumSortOrder, albumSortOrder, showToast, hiddenPortalAuth,
                 setUnlockPortalModalOpen, selectionMode, setSelectionMode, clearSelection } = useContext(AppContext);
-            const [theme, setTheme] = useState(() => localStorage.theme || (window.matchMedia(
-                '(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+            const [theme, setTheme] = useState(() => localStorage.theme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
             useEffect(() => {
-                if (theme === 'dark') { document.documentElement.classList.add('dark');
-                    localStorage.theme = 'dark'; } else { document.documentElement.classList.remove('dark');
-                    localStorage.theme = 'light'; }
+                if (theme === 'dark') { document.documentElement.classList.add('dark'); localStorage.theme = 'dark'; } else { document.documentElement.classList.remove('dark'); localStorage.theme = 'light'; }
             }, [theme]);
 
             const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-            const toggleSort = () => { setAlbumSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-                showToast(`Sorted ${albumSortOrder === 'asc' ? 'Z→A' : 'A→Z'}`); };
-            const handleLockClick = () => { hiddenPortalAuth ? setActiveView('hiddenPortal') : setUnlockPortalModalOpen(
-                true); };
-            const handleSelectToggle = () => {
-                if (selectionMode) { clearSelection(); }
-                setSelectionMode(!selectionMode);
-            };
+            const toggleSort = () => { setAlbumSortOrder(prev => prev === 'asc' ? 'desc' : 'asc'); showToast(`Sorted ${albumSortOrder === 'asc' ? 'Z→A' : 'A→Z'}`); };
+            const handleLockClick = () => { hiddenPortalAuth ? setActiveView('hiddenPortal') : setUnlockPortalModalOpen(true); };
+            const handleSelectToggle = () => { if (selectionMode) { clearSelection(); } setSelectionMode(!selectionMode); };
+            const handleUploadClick = () => { setUploadAlbum(null); setUploadModalOpen(true); };
 
             return (
                 <nav className="fixed top-0 w-full z-50 glass-nav transition-all duration-300">
@@ -1111,7 +1157,7 @@
                             <button onClick={handleSelectToggle} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-amber-50 dark:hover:bg-slate-800 text-amber-700 dark:text-amber-400 transition" aria-label={selectionMode ? 'Exit selection' : 'Select items'}>
                                 <i className={`fa-solid ${selectionMode ? 'fa-check-circle' : 'fa-check-double'} text-sm`}></i>
                             </button>
-                            <button onClick={() => setUploadModalOpen(true)} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-amber-100 dark:hover:bg-slate-800 text-amber-800 dark:text-amber-300 transition" aria-label="Upload">
+                            <button onClick={handleUploadClick} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-amber-100 dark:hover:bg-slate-800 text-amber-800 dark:text-amber-300 transition" aria-label="Upload">
                                 <i className="fa-solid fa-cloud-upload-alt text-sm"></i>
                             </button>
                             <button onClick={toggleTheme} className="tooltip w-9 h-9 rounded-full bg-white/50 dark:bg-slate-800/50 hover:bg-yellow-50 dark:hover:bg-slate-800 text-stone-700 dark:text-yellow-400 transition" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}>
@@ -1123,20 +1169,19 @@
             );
         };
 
-        // ---------- PEOPLE VIEW ----------
+        // ---------- PEOPLE VIEW (Albums) ----------
         const PeopleView = () => {
             const { peopleData, getAllVisiblePhotos, favorites, deletedMedia, uploadedMedia, isAlbumHidden, albumSortOrder,
-                handleAlbumClick, getThumbUrl, setHideModalOpen, setAlbumToHide, showAlbum } = useContext(AppContext);
+                handleAlbumClick, getThumbUrl, setHideModalOpen, setAlbumToHide, showAlbum, openUploadForAlbum, isAlbumVisible } = useContext(AppContext);
             const [searchQuery, setSearchQuery] = useState('');
             const allVisible = getAllVisiblePhotos();
 
-            let albumNames = Object.keys(peopleData).filter(name => !isAlbumHidden(name));
+            let albumNames = Object.keys(peopleData).filter(name => !isAlbumHidden(name) || isAlbumVisible(name));
             if (searchQuery) albumNames = albumNames.filter(n => n.toLowerCase().includes(searchQuery.toLowerCase()));
             albumNames.sort((a, b) => albumSortOrder === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
 
             const favCount = [...favorites].filter(f => allVisible.includes(f)).length;
-            const recentCount = uploadedMedia.filter(m => new Date(m.date).getTime() > Date.now() - 7 * 24 * 60 * 60 *
-                1000).length;
+            const recentCount = uploadedMedia.filter(m => new Date(m.date).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && isAlbumVisible(m.album)).length;
 
             return (
                 <div className="animate-enter pb-12">
@@ -1160,7 +1205,7 @@
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
                         <AlbumCard name="All Photos" count={allVisible.length} icon="layer-group" gradient="from-amber-600 to-amber-800" onClick={() => handleAlbumClick('All Photos')} />
                         <AlbumCard name="Favorites" count={favCount} icon="heart" gradient="from-rose-600 to-pink-800" onClick={() => handleAlbumClick('Favorites')} />
                         {recentCount > 0 && <AlbumCard name="Recent Uploads" count={recentCount} icon="clock" gradient="from-emerald-600 to-teal-800" onClick={() => handleAlbumClick('Recent Uploads')} />}
@@ -1180,10 +1225,16 @@
                                         <h3 className="text-amber-100 text-lg font-bold tracking-wide truncate leading-tight drop-shadow-lg">{name}</h3>
                                         <span className="inline-block px-2 py-0.5 bg-amber-500/20 backdrop-blur-sm rounded-full text-[9px] font-medium text-amber-200 border border-amber-400/30">{data.count} items</span>
                                     </div>
-                                    <button onClick={(e) => { e.stopPropagation(); setAlbumToHide(name); setHideModalOpen(true); }}
-                                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-purple-800 z-10">
-                                        <i className="fa-solid fa-lock text-xs"></i>
-                                    </button>
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                        <button onClick={(e) => { e.stopPropagation(); openUploadForAlbum(name); }}
+                                            className="w-8 h-8 rounded-full bg-emerald-600/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-emerald-700 transition">
+                                            <i className="fa-solid fa-plus text-xs"></i>
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); setAlbumToHide(name); setHideModalOpen(true); }}
+                                            className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-amber-300 hover:bg-purple-800 transition">
+                                            <i className="fa-solid fa-lock text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -1209,8 +1260,7 @@
         );
 
         const FavoritesZone = () => {
-            const { favorites, openFavoriteLightbox, getAllVisiblePhotos, uploadedMedia, showAlbum } = useContext(
-            AppContext);
+            const { favorites, openFavoriteLightbox, getAllVisiblePhotos, uploadedMedia, showAlbum } = useContext(AppContext);
             const favArray = [...favorites].filter(f => getAllVisiblePhotos().includes(f));
             if (favArray.length === 0) return null;
             const displayFavs = favArray.sort(() => 0.5 - Math.random()).slice(0, 12);
@@ -1253,15 +1303,14 @@
                 restoreUploadedMedia, permanentlyDeleteMedia, clearTrash, getThumbUrl, openLightbox,
                 setActiveView, gallerySearch, setGallerySearch, filterType, setFilterType,
                 selectionMode, selectedItems, toggleSelection, deleteSelected, favoriteSelected,
+                openUploadForAlbum, isAlbumVisible
             } = useContext(AppContext);
             const [dropdownOpen, setDropdownOpen] = useState(false);
             const isTrash = galleryContext === 'trash';
-            const avatarSrc = !isTrash && activeAlbum !== 'Favorites' && activeAlbum !== 'All Photos' && activeAlbum !==
-                'Recent Uploads' ? getThumbUrl(activeAlbum) : null;
+            const avatarSrc = !isTrash && activeAlbum !== 'Favorites' && activeAlbum !== 'All Photos' && activeAlbum !== 'Recent Uploads' ? getThumbUrl(activeAlbum) : null;
 
             const trashItems = isTrash ? deletedMedia : [];
 
-            // Apply filters
             const filteredGallery = useMemo(() => {
                 let items = isTrash ? trashItems : currentGallery;
                 if (gallerySearch) {
@@ -1274,8 +1323,7 @@
                     items = items.filter(item => {
                         const filename = isTrash ? item.filename : item;
                         const media = uploadedMedia.find(m => m.filename === filename);
-                        const type = media?.type || (filename.toLowerCase().endsWith('.mp4') ? 'video' :
-                            'image');
+                        const type = media?.type || (filename.toLowerCase().endsWith('.mp4') ? 'video' : 'image');
                         return type === filterType;
                     });
                 }
@@ -1311,6 +1359,12 @@
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 ml-auto flex-wrap">
+                                {!isTrash && activeAlbum !== 'Favorites' && activeAlbum !== 'All Photos' && activeAlbum !== 'Recent Uploads' && (
+                                    <button onClick={() => openUploadForAlbum(activeAlbum)}
+                                        className="px-3 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow flex items-center gap-1">
+                                        <i className="fa-solid fa-plus"></i> Add
+                                    </button>
+                                )}
                                 <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="bg-white/70 dark:bg-stone-800/70 border border-amber-200 dark:border-amber-800/30 rounded-full py-2 px-3 text-xs font-medium text-stone-700 dark:text-amber-200 focus:ring-2 focus:ring-amber-500/20 outline-none">
                                     <option value="all">All</option>
                                     <option value="image">Images</option>
@@ -1365,7 +1419,6 @@
                         </div>
                     </div>
 
-                    {/* Selection toolbar */}
                     {selectionMode && selectedItems.size > 0 && (
                         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bulk-toolbar rounded-full px-4 py-2 shadow-2xl flex items-center gap-3">
                             <span className="text-amber-200 text-sm font-medium">{selectedItems.size} selected</span>
@@ -1476,10 +1529,9 @@
         const HiddenPortalView = () => {
             const { hiddenAlbums, unlockedHidden, showAlbum, getThumbUrl, getAlbumPhotoCount, unhideAlbum,
                 regenerateBackupCodes, setBackupCodesModalOpen, setCurrentBackupCodes, setActiveView, promptUnlockAlbum,
-                setHiddenPortalAuth, setChangeMasterPwModalOpen } = useContext(AppContext);
+                setHiddenPortalAuth, setChangeMasterPwModalOpen, isAlbumVisible } = useContext(AppContext);
             const hiddenNames = Object.keys(hiddenAlbums);
-            const handleLogout = () => { setHiddenPortalAuth(false);
-                setActiveView('people'); };
+            const handleLogout = () => { setHiddenPortalAuth(false); setActiveView('people'); };
             return (
                 <div className="animate-enter pb-12">
                     <div className="sticky top-20 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 mb-8">
@@ -1602,10 +1654,10 @@
             );
         };
 
-        // ---------- AUDIO PLAYER ----------
+        // ---------- AUDIO PLAYER (with cancel button) ----------
         const AudioPlayer = () => {
             const { currentAudioFile, audioPlaying, audioProgress, audioDuration, pauseAudio, resumeAudio, stopAudio,
-                seekAudio, setVolume, audioVolume, toggleLoop, audioLoop, formatTime } = useContext(AppContext);
+                seekAudio, setVolume, audioVolume, toggleLoop, audioLoop, formatTime, dismissAudio } = useContext(AppContext);
             const [expanded, setExpanded] = useState(false);
             if (!currentAudioFile) return null;
             const progressPercent = audioDuration ? (audioProgress / audioDuration) * 100 : 0;
@@ -1624,6 +1676,10 @@
                                 <button onClick={stopAudio} className="w-8 h-8 rounded-full bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 flex items-center justify-center transition text-stone-700 dark:text-amber-300"><i className="fa-solid fa-stop text-xs"></i></button>
                                 <button onClick={audioPlaying ? pauseAudio : resumeAudio} className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white flex items-center justify-center shadow-md transition"><i className={`fa-solid ${audioPlaying ? 'fa-pause' : 'fa-play'}`}></i></button>
                                 <button onClick={toggleLoop} className={`w-8 h-8 rounded-full flex items-center justify-center transition ${audioLoop ? 'bg-amber-600 text-white' : 'bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-amber-300'}`}><i className="fa-solid fa-repeat text-xs"></i></button>
+                                {/* Cancel/dismiss button */}
+                                <button onClick={dismissAudio} className="w-8 h-8 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-md transition">
+                                    <i className="fa-solid fa-times text-xs"></i>
+                                </button>
                             </div>
                             <div className="hidden sm:flex items-center gap-2 flex-1">
                                 <span className="text-xs font-mono text-stone-600 dark:text-amber-300">{formatTime(audioProgress)}</span>
@@ -1654,28 +1710,27 @@
             );
         };
 
-        // ---------- UPLOAD MODAL ----------
-        const UploadModal = ({ isOpen, onClose, onMediaUpload, onThumbnailUpload, onAudioUpload, albumSuggestions }) => {
+        // ---------- UPLOAD MODAL (with preselected album) ----------
+        const UploadModal = ({ isOpen, onClose, onMediaUpload, onThumbnailUpload, onAudioUpload, albumSuggestions, preselectedAlbum }) => {
             const [tab, setTab] = useState('media');
-            const [album, setAlbum] = useState('');
+            const [album, setAlbum] = useState(preselectedAlbum || '');
             const [mediaFiles, setMediaFiles] = useState([]);
             const [thumbnailFile, setThumbnailFile] = useState(null);
             const [thumbnailName, setThumbnailName] = useState('');
             const [audioFiles, setAudioFiles] = useState([]);
             const fileInputRef = useRef(null);
 
+            useEffect(() => {
+                if (preselectedAlbum) setAlbum(preselectedAlbum);
+            }, [preselectedAlbum]);
+
             if (!isOpen) return null;
 
-            const handleThumbnailFileChange = (e) => { const f = e.target.files[0]; if (f) { setThumbnailFile(f);
-                    setThumbnailName(f.name); } };
+            const handleThumbnailFileChange = (e) => { const f = e.target.files[0]; if (f) { setThumbnailFile(f); setThumbnailName(f.name); } };
             const handleMediaFilesChange = (e) => { setMediaFiles(Array.from(e.target.files)); };
             const handleAudioFilesChange = (e) => { setAudioFiles(Array.from(e.target.files)); };
 
-            const resetForm = () => { setAlbum('');
-                setMediaFiles([]);
-                setThumbnailFile(null);
-                setThumbnailName('');
-                setAudioFiles([]); };
+            const resetForm = () => { if (!preselectedAlbum) setAlbum(''); setMediaFiles([]); setThumbnailFile(null); setThumbnailName(''); setAudioFiles([]); };
 
             const handleSubmit = async () => {
                 if (tab === 'thumbnail') {
@@ -1708,7 +1763,9 @@
                             {tab !== 'audio' && (
                                 <div>
                                     <label className="block text-xs font-bold text-stone-500 dark:text-amber-400 uppercase tracking-wider mb-2">Album Name</label>
-                                    <input type="text" value={album} onChange={(e) => setAlbum(e.target.value)} placeholder="e.g. Maria, Trips, Family" list="album-suggestions" className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none transition dark:text-white" />
+                                    <input type="text" value={album} onChange={(e) => setAlbum(e.target.value)} disabled={!!preselectedAlbum}
+                                        placeholder="e.g. Maria, Trips, Family" list="album-suggestions"
+                                        className={`w-full px-4 py-3 rounded-xl border transition dark:text-white ${preselectedAlbum ? 'bg-amber-50 dark:bg-amber-900/30 border-amber-300' : 'bg-white/70 dark:bg-stone-900/70 border-amber-200 dark:border-amber-800/30'} focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 outline-none`} />
                                     <datalist id="album-suggestions">{albumSuggestions.map(name => <option key={name} value={name} />)}</datalist>
                                 </div>
                             )}
@@ -1735,7 +1792,7 @@
             );
         };
 
-        // ---------- MODALS ----------
+        // ---------- MODALS (Unchanged except for password verification in UnlockAlbumModal using new system) ----------
         const HideAlbumModal = ({ isOpen, onClose, albumName }) => {
             const { hideAlbum, setBackupCodesModalOpen, setCurrentBackupCodes, showToast } = useContext(AppContext);
             const [password, setPassword] = useState('');
@@ -1747,9 +1804,7 @@
                 if (!password || !confirm || !question || !answer) { showToast('All fields required', 'error'); return; }
                 if (password !== confirm) { showToast('Passwords do not match', 'error'); return; }
                 const codes = await hideAlbum(albumName, password, question, answer);
-                if (codes) { onClose();
-                    setCurrentBackupCodes(codes);
-                    setBackupCodesModalOpen(true); } else { showToast('Album already hidden', 'error'); }
+                if (codes) { onClose(); setCurrentBackupCodes(codes); setBackupCodesModalOpen(true); } else { showToast('Album already hidden', 'error'); }
             };
             return (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
@@ -1786,8 +1841,7 @@
         };
 
         const UnlockAlbumModal = ({ isOpen, onClose, albumName }) => {
-            const { hiddenAlbums, useBackupCode, setUnlockedHidden, showAlbum, showToast, setActiveView } = useContext(
-            AppContext);
+            const { hiddenAlbums, useBackupCode, setUnlockedHidden, showAlbum, showToast, setActiveView } = useContext(AppContext);
             const [codeOrPw, setCodeOrPw] = useState('');
             const [showForgot, setShowForgot] = useState(false);
             const [answer, setAnswer] = useState('');
@@ -1796,8 +1850,9 @@
             if (!album) return null;
             const handleUnlock = async () => {
                 if (!codeOrPw) return showToast('Enter password or code', 'error');
-                const hashedInput = await hashString(codeOrPw);
-                if (hashedInput === album.password) {
+                const storedPassword = album.password; // could be object {hash,salt} or legacy string
+                const verified = await verifyPasswordPBKDF2(codeOrPw, storedPassword);
+                if (verified) {
                     setUnlockedHidden(prev => new Set(prev).add(albumName));
                     onClose();
                     showAlbum(albumName);
@@ -1810,8 +1865,9 @@
                 } else { showToast('Invalid password or code', 'error'); }
             };
             const handleAnswer = async () => {
-                const hashedAnswer = await hashString(answer.toLowerCase());
-                if (hashedAnswer === album.answer) {
+                const storedAnswer = album.answer; // could be object or legacy string
+                const verified = await verifyPasswordPBKDF2(answer.toLowerCase(), storedAnswer);
+                if (verified) {
                     setUnlockedHidden(prev => new Set(prev).add(albumName));
                     onClose();
                     showAlbum(albumName);
@@ -1850,36 +1906,32 @@
         };
 
         const UnlockHiddenPortalModal = ({ isOpen, onClose }) => {
-            const { masterPasswordHash, setMasterPassword, verifyMasterPassword, setHiddenPortalAuth, setActiveView,
-                showToast } = useContext(AppContext);
+            const { masterPassword, setMasterPassword, verifyMasterPassword, setHiddenPortalAuth, setActiveView, showToast } = useContext(AppContext);
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
             if (!isOpen) return null;
             const handleSubmit = async () => {
-                if (!masterPasswordHash) {
+                if (!masterPassword) {
                     if (!password) { setError('Password required'); return; }
                     await setMasterPassword(password);
                     showToast('Master password set. Hidden vault unlocked.');
                     onClose();
                 } else {
                     const valid = await verifyMasterPassword(password);
-                    if (valid) { setHiddenPortalAuth(true);
-                        setActiveView('hiddenPortal');
-                        showToast('Hidden vault unlocked');
-                        onClose(); } else { setError('Incorrect password'); }
+                    if (valid) { setHiddenPortalAuth(true); setActiveView('hiddenPortal'); showToast('Hidden vault unlocked'); onClose(); } else { setError('Incorrect password'); }
                 }
             };
             return (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" onClick={onClose}>
                     <div className="glass-modal rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 mb-4 flex items-center gap-3"><i className="fa-solid fa-shield text-purple-700"></i><span>{!masterPasswordHash ? 'Create Master Password' : 'Enter Master Password'}</span></h3>
-                        <p className="text-sm text-stone-600 dark:text-amber-300/70 mb-4">{!masterPasswordHash ? 'This password will be required to access the hidden vault.' : 'Access your secret gallery.'}</p>
+                        <h3 className="text-2xl font-bold text-stone-900 dark:text-amber-100 mb-4 flex items-center gap-3"><i className="fa-solid fa-shield text-purple-700"></i><span>{!masterPassword ? 'Create Master Password' : 'Enter Master Password'}</span></h3>
+                        <p className="text-sm text-stone-600 dark:text-amber-300/70 mb-4">{!masterPassword ? 'This password will be required to access the hidden vault.' : 'Access your secret gallery.'}</p>
                         <div className="space-y-4">
                             <div><input type="password" placeholder="Password" value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }} className="w-full px-4 py-3 rounded-xl bg-white/70 dark:bg-stone-900/70 border border-amber-200 dark:border-amber-800/30 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition dark:text-white" /></div>
                             {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
                         </div>
                         <div className="flex gap-3 mt-6">
-                            <button onClick={handleSubmit} className="flex-1 py-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition">{!masterPasswordHash ? 'Create & Unlock' : 'Unlock'}</button>
+                            <button onClick={handleSubmit} className="flex-1 py-3 bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-600 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition">{!masterPassword ? 'Create & Unlock' : 'Unlock'}</button>
                             <button onClick={onClose} className="flex-1 py-3 bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 rounded-xl font-medium transition">Cancel</button>
                         </div>
                     </div>
@@ -1888,20 +1940,18 @@
         };
 
         const ChangeMasterPasswordModal = ({ isOpen, onClose }) => {
-            const { masterPasswordHash, changeMasterPassword, showToast } = useContext(AppContext);
+            const { masterPassword, changeMasterPassword, showToast } = useContext(AppContext);
             const [oldPassword, setOldPassword] = useState('');
             const [newPassword, setNewPassword] = useState('');
             const [confirm, setConfirm] = useState('');
             const [error, setError] = useState('');
             if (!isOpen) return null;
             const handleChange = async () => {
-                if (!masterPasswordHash) { showToast('No master password set.', 'error');
-                    onClose(); return; }
+                if (!masterPassword) { showToast('No master password set.', 'error'); onClose(); return; }
                 if (!oldPassword || !newPassword || !confirm) { setError('All fields required'); return; }
                 if (newPassword !== confirm) { setError('New passwords do not match'); return; }
                 const success = await changeMasterPassword(oldPassword, newPassword);
-                if (success) { showToast('Master password changed');
-                    onClose(); } else { setError('Old password is incorrect'); }
+                if (success) { showToast('Master password changed'); onClose(); } else { setError('Old password is incorrect'); }
             };
             return (
                 <div className="fixed inset-0 z-[210] flex items-center justify-center p-4 bg-black/50 backdrop-blur-md" onClick={onClose}>
@@ -1922,7 +1972,8 @@
             );
         };
 
-        // ---------- ENHANCED LIGHTBOX ----------
+        // ---------- ENHANCED LIGHTBOX (unchanged from original, but already has good video/audio controls) ----------
+        // (The lightbox code remains exactly the same as the provided code; it's already robust.)
         const Lightbox = () => {
             const {
                 lightboxOpen, currentGallery, currentPhotoIndex, nextImage, prevImage, closeLightbox,
