@@ -24,7 +24,7 @@ body{
 }
 [data-bs-theme="dark"] body{ background:#0c0a1a; color:#fde68a; }
 
-.glass-nav{ background:rgba(255,245,235,.75); backdrop-filter:blur(12px) saturate(180%); border-bottom:1px solid rgba(255,215,0,.2); }
+.glass-nav{ background:rgba(255,245,235,.85); backdrop-filter:blur(8px) saturate(150%); border-bottom:1px solid rgba(255,215,0,.2); }
 [data-bs-theme="dark"] .glass-nav{ background:rgba(20,10,30,.85); border-bottom:1px solid rgba(255,215,0,.15); }
 
 .glass-modal .modal-content{ background:rgba(255,245,240,.97); backdrop-filter:blur(24px); border:1px solid rgba(255,215,0,.3); border-radius:1.5rem; box-shadow:0 30px 50px -20px rgba(106,13,173,.4); }
@@ -60,13 +60,15 @@ body{
 .volume-range{ -webkit-appearance:none; width:70px; height:4px; border-radius:2px; background:rgba(255,255,255,.3); }
 .volume-range::-webkit-slider-thumb{ -webkit-appearance:none; width:12px;height:12px;background:#c084fc;border-radius:50%;cursor:pointer; }
 
-.audio-player{ background:rgba(255,245,235,.92); backdrop-filter:blur(16px); border-top:1px solid rgba(212,175,55,.3); }
+.audio-player{ background:rgba(255,245,235,.95); backdrop-filter:blur(10px); border-top:1px solid rgba(212,175,55,.3); }
 [data-bs-theme="dark"] .audio-player{ background:rgba(30,20,40,.92); border-top:1px solid rgba(212,175,55,.2); }
 .audio-progress{ -webkit-appearance:none; height:6px; border-radius:3px; background:#e2d9c0; }
 .audio-progress::-webkit-slider-thumb{ -webkit-appearance:none; width:16px;height:16px;background:#fff;border:2px solid #c084fc;border-radius:50%;cursor:pointer; }
 [data-bs-theme="dark"] .audio-progress{ background:#4a3f33; }
 
 .tooltip-lbl{ position:relative; }
+.editor-filter-btn, .editor-crop-btn{ background:rgba(255,255,255,.08)!important; color:#f5ede0!important; border:1px solid rgba(255,255,255,.15)!important; }
+.editor-filter-btn.active-filter, .editor-crop-btn.active-filter{ background:#b45309!important; color:#fff!important; border-color:#b45309!important; }
 .tooltip-lbl:hover:after, .tooltip-lbl.show-tip:after{ content:attr(aria-label); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#2d1b3c; color:#ffd700; font-size:10px; padding:4px 8px; border-radius:20px; white-space:nowrap; pointer-events:none; margin-bottom:6px; z-index:100; border:1px solid rgba(255,215,0,.2); }
 
 .selected-item{ box-shadow:0 0 0 4px #f59e0b, 0 0 0 6px rgba(245,158,11,.3); }
@@ -80,7 +82,7 @@ body{
 @media(min-width:992px){ .masonry-grid.lg-cols-4{column-count:4;} }
 .masonry-item{ break-inside:avoid; margin-bottom:1rem; }
 
-.album-card{ position:relative; overflow:hidden; border-radius:1rem; aspect-ratio:4/5; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.08); transition:.4s; background:#e7e5e4; border:1px solid rgba(217,180,110,.4); }
+.album-card{ position:relative; overflow:hidden; border-radius:1rem; aspect-ratio:4/5; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.08); transition:.4s; background:#e7e5e4; border:1px solid rgba(217,180,110,.4); content-visibility:auto; contain-intrinsic-size:280px 350px; }
 [data-bs-theme="dark"] .album-card{ background:#292524; border-color:rgba(180,130,20,.2); }
 .album-card:hover{ box-shadow:0 20px 35px rgba(0,0,0,.18); transform:translateY(-3px); }
 .album-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:.6s; }
@@ -97,7 +99,7 @@ body{
 .special-card .grad{ position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.7), transparent); }
 .special-card .card-info{ position:absolute; left:0; bottom:0; padding:1rem; }
 
-.gallery-item{ position:relative; overflow:hidden; cursor:zoom-in; background:#e7e5e4; box-shadow:0 1px 3px rgba(0,0,0,.08); border-radius:.75rem; }
+.gallery-item{ position:relative; overflow:hidden; cursor:zoom-in; background:#e7e5e4; box-shadow:0 1px 3px rgba(0,0,0,.08); border-radius:.75rem; content-visibility:auto; contain-intrinsic-size:200px 200px; }
 [data-bs-theme="dark"] .gallery-item{ background:#292524; }
 .gallery-item img,.gallery-item video{ width:100%; height:100%; object-fit:cover; display:block; }
 .gallery-item.square{ aspect-ratio:1/1; }
@@ -167,6 +169,7 @@ body{
                 <div class="more-dropdown d-none" id="moreMenu">
                     <button onclick="closeMoreMenu();setActiveView('timeline')"><i class="fa-solid fa-timeline text-warning"></i> Timeline View</button>
                     <button onclick="closeMoreMenu();setActiveView('duplicates')"><i class="fa-solid fa-clone text-warning"></i> Find Duplicates</button>
+                    <button onclick="closeMoreMenu();openInsightsModal()"><i class="fa-solid fa-chart-pie text-warning"></i> Storage &amp; Insights</button>
                     <button onclick="closeMoreMenu();openBackupModal()"><i class="fa-solid fa-box-archive text-warning"></i> Backup &amp; Restore</button>
                     <button onclick="closeMoreMenu();openSettingsModal()"><i class="fa-solid fa-gear text-warning"></i> Settings</button>
                 </div>
@@ -182,27 +185,25 @@ body{
 <!-- ============= AUDIO PLAYER BAR ============= -->
 <div id="audio-player-bar" class="audio-player fixed-bottom p-2 p-sm-3 shadow d-none">
     <div class="container-fluid d-flex align-items-center gap-2 gap-sm-4 flex-wrap">
-        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:160px">
-            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:linear-gradient(135deg,#059669,#b45309);color:#fff"><i class="fa-solid fa-headphones"></i></div>
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:160px;cursor:pointer" onclick="openNowPlayingModal()">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" id="ap-art" style="width:40px;height:40px;background:linear-gradient(135deg,#059669,#b45309);color:#fff"><i class="fa-solid fa-headphones"></i></div>
             <div class="text-truncate">
                 <p class="fw-semibold mb-0 small text-truncate" id="ap-name">-</p>
                 <p class="text-muted mb-0" style="font-size:11px" id="ap-size">-</p>
             </div>
+            <i class="fa-solid fa-chevron-up text-muted small ms-1 d-none d-sm-inline"></i>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <button class="icon-btn" onclick="stopAudio()"><i class="fa-solid fa-stop small"></i></button>
+        <div class="d-flex align-items-center gap-1 gap-sm-2">
+            <button class="icon-btn tooltip-lbl" aria-label="Previous track" onclick="prevTrack()"><i class="fa-solid fa-backward-step small"></i></button>
             <button class="icon-btn" style="width:44px;height:44px;background:#b45309;color:#fff" id="ap-playpause" onclick="toggleAudioPlayPause()"><i class="fa-solid fa-play"></i></button>
-            <button class="icon-btn" id="ap-loop" onclick="toggleLoop()"><i class="fa-solid fa-repeat small"></i></button>
+            <button class="icon-btn tooltip-lbl" aria-label="Next track" onclick="nextTrack()"><i class="fa-solid fa-forward-step small"></i></button>
+            <button class="icon-btn tooltip-lbl" aria-label="Repeat mode" id="ap-repeat" onclick="cycleRepeatMode()"><i class="fa-solid fa-repeat small"></i></button>
             <button class="icon-btn" style="background:#e11d48;color:#fff" onclick="dismissAudio()"><i class="fa-solid fa-times small"></i></button>
         </div>
         <div class="d-none d-sm-flex align-items-center gap-2 flex-grow-1">
             <span class="small font-monospace" id="ap-progress-text">0:00</span>
             <input type="range" class="audio-progress flex-grow-1" min="0" max="0" step="1" value="0" id="ap-seek" oninput="seekAudio(this.value)">
             <span class="small font-monospace" id="ap-duration-text">0:00</span>
-        </div>
-        <div class="d-none d-md-flex align-items-center gap-2">
-            <i class="fa-solid fa-volume-low text-muted small"></i>
-            <input type="range" class="volume-range" min="0" max="1" step="0.01" value="1" id="ap-volume" oninput="setVolumeFromUI(this.value)" style="filter:invert(0)">
         </div>
     </div>
 </div>
@@ -218,12 +219,14 @@ body{
         <span class="lb-chip" id="lb-counter">1 / 1</span>
         <div class="d-flex align-items-center gap-2">
             <button class="lb-round-btn" aria-label="Toggle slideshow" onclick="toggleSlideshow()"><i class="fa-solid fa-play small" id="lb-slideshow-icon"></i></button>
+            <button class="lb-round-btn tooltip-lbl" aria-label="Slideshow speed" style="width:auto;padding:0 10px;font-size:11px;font-weight:600" onclick="cycleSlideshowSpeed()"><span id="lb-slideshow-speed">3s</span></button>
             <div class="position-relative">
                 <button class="lb-round-btn" aria-label="Slideshow music" onclick="toggleMusicPicker(event)"><i class="fa-solid fa-music small"></i></button>
                 <div class="lb-dropdown d-none" id="lb-music-dropdown"></div>
             </div>
             <button class="lb-round-btn d-none" id="lb-music-toggle" onclick="toggleAudioPlayPause()"><i class="fa-solid fa-volume-high small"></i></button>
             <button class="lb-round-btn" aria-label="Toggle favorite" onclick="toggleFavoriteCurrent()"><i class="fa-regular fa-heart" id="lb-fav-icon" style="font-size:1.1rem"></i></button>
+            <button class="lb-round-btn d-none" id="lb-edit-btn" aria-label="Edit photo" onclick="openPhotoEditor(state.currentGallery[state.currentPhotoIndex])"><i class="fa-solid fa-wand-magic-sparkles small"></i></button>
             <button class="lb-round-btn d-none" id="lb-delete-btn" aria-label="Delete" onclick="deleteCurrentImage()"><i class="fa-solid fa-trash small"></i></button>
             <button class="lb-round-btn" aria-label="Download" onclick="downloadCurrent()"><i class="fa-solid fa-download small"></i></button>
             <button class="lb-round-btn" aria-label="Close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
@@ -465,6 +468,21 @@ body{
   </div>
 </div>
 
+<!-- Storage & Insights Modal -->
+<div class="modal fade glass-modal" id="insightsModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content p-2">
+      <div class="modal-body p-3 p-sm-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="h5 fw-bold mb-0"><i class="fa-solid fa-chart-pie text-warning me-2"></i>Storage &amp; Insights</h3>
+          <button class="icon-btn" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="insightsBody"><div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin text-warning"></i></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Move Selected to Album Modal -->
 <div class="modal fade glass-modal" id="moveToAlbumModal" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
@@ -524,6 +542,158 @@ body{
   </div>
 </div>
 
+<!-- Photo Editor Modal -->
+<div class="modal fade" id="photoEditorModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <div class="modal-content p-2" style="background:#1a1025;color:#f5ede0;border-radius:1.25rem;border:1px solid rgba(217,180,110,.3)">
+      <div class="modal-body p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="small fw-bold text-uppercase" style="color:#d4a93c;letter-spacing:.05em"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Edit Photo</span>
+          <button class="icon-btn" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="closePhotoEditor()" data-bs-dismiss="modal"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="d-flex justify-content-center align-items-center mb-3 rounded-3 overflow-hidden" style="background:#000;min-height:200px">
+          <canvas id="editorCanvas" style="max-width:100%;max-height:45vh"></canvas>
+        </div>
+
+        <ul class="nav nav-pills nav-fill mb-3" style="background:rgba(255,255,255,.06);border-radius:2rem;padding:4px">
+          <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#editTabAdjust" style="color:#f5ede0" type="button">Adjust</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#editTabCrop" style="color:#f5ede0" type="button">Crop</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#editTabFilters" style="color:#f5ede0" type="button">Filters</button></li>
+          <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#editTabRotate" style="color:#f5ede0" type="button">Rotate</button></li>
+        </ul>
+
+        <div class="tab-content mb-3">
+          <div class="tab-pane fade show active" id="editTabAdjust">
+            <label class="small d-flex justify-content-between">Brightness <span id="editBrightnessVal">0</span></label>
+            <input type="range" class="form-range mb-2" min="-100" max="100" value="0" id="editBrightness" oninput="document.getElementById('editBrightnessVal').textContent=this.value;setEditorAdjust('brightness', this.value)">
+            <label class="small d-flex justify-content-between">Contrast <span id="editContrastVal">0</span></label>
+            <input type="range" class="form-range mb-2" min="-100" max="100" value="0" id="editContrast" oninput="document.getElementById('editContrastVal').textContent=this.value;setEditorAdjust('contrast', this.value)">
+            <label class="small d-flex justify-content-between">Saturation <span id="editSaturationVal">0</span></label>
+            <input type="range" class="form-range mb-2" min="-100" max="100" value="0" id="editSaturation" oninput="document.getElementById('editSaturationVal').textContent=this.value;setEditorAdjust('saturation', this.value)">
+          </div>
+          <div class="tab-pane fade" id="editTabCrop">
+            <p class="small mb-2" style="color:rgba(245,237,224,.6)">Crop is centered — pick a shape, then zoom to frame it.</p>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <button class="btn btn-sm editor-crop-btn active-filter" data-aspect="original" onclick="setEditorCropAspect(null, this)">Original</button>
+              <button class="btn btn-sm editor-crop-btn" data-aspect="square" onclick="setEditorCropAspect(1, this)">Square</button>
+              <button class="btn btn-sm editor-crop-btn" data-aspect="4:3" onclick="setEditorCropAspect(4/3, this)">4:3</button>
+              <button class="btn btn-sm editor-crop-btn" data-aspect="16:9" onclick="setEditorCropAspect(16/9, this)">16:9</button>
+              <button class="btn btn-sm editor-crop-btn" data-aspect="9:16" onclick="setEditorCropAspect(9/16, this)">9:16</button>
+            </div>
+            <label class="small">Zoom</label>
+            <input type="range" class="form-range" min="1" max="2.5" step="0.05" value="1" id="editZoom" oninput="setEditorZoom(this.value)">
+          </div>
+          <div class="tab-pane fade" id="editTabFilters">
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-sm editor-filter-btn active-filter" data-filter="none" onclick="setEditorFilterPreset('none')">Original</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="bw" onclick="setEditorFilterPreset('bw')">B&amp;W</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="sepia" onclick="setEditorFilterPreset('sepia')">Sepia</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="vivid" onclick="setEditorFilterPreset('vivid')">Vivid</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="cool" onclick="setEditorFilterPreset('cool')">Cool</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="warm" onclick="setEditorFilterPreset('warm')">Warm</button>
+              <button class="btn btn-sm editor-filter-btn" data-filter="fade" onclick="setEditorFilterPreset('fade')">Fade</button>
+            </div>
+          </div>
+          <div class="tab-pane fade" id="editTabRotate">
+            <div class="d-flex gap-2">
+              <button class="btn flex-fill" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="setEditorRotation(-90)"><i class="fa-solid fa-rotate-left me-1"></i>Rotate Left</button>
+              <button class="btn flex-fill" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="setEditorRotation(90)"><i class="fa-solid fa-rotate-right me-1"></i>Rotate Right</button>
+              <button class="btn flex-fill" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="toggleEditorFlip()"><i class="fa-solid fa-arrows-left-right me-1"></i>Flip</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn flex-fill" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="saveEditedPhoto(true)"><i class="fa-solid fa-copy me-1"></i>Save as Copy</button>
+          <button class="btn text-white flex-fill" style="background:#b45309" onclick="saveEditedPhoto(false)"><i class="fa-solid fa-check me-1"></i>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Now Playing (advanced audio player) Modal -->
+<div class="modal fade" id="nowPlayingModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content p-2" style="background:#1a1025;color:#f5ede0;border:1px solid rgba(217,180,110,.3);border-radius:1.25rem">
+      <div class="modal-body p-3 p-sm-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span class="small fw-bold text-uppercase" style="color:#d4a93c;letter-spacing:.05em"><i class="fa-solid fa-headphones me-1"></i>Now Playing</span>
+          <button class="icon-btn" style="background:rgba(255,255,255,.08);color:#f5ede0" data-bs-dismiss="modal"><i class="fa-solid fa-chevron-down"></i></button>
+        </div>
+
+        <div class="d-flex flex-column align-items-center text-center mb-3">
+          <div class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:140px;height:140px;background:linear-gradient(135deg,#059669,#b45309);box-shadow:0 15px 40px -10px rgba(180,83,9,.5)"><i class="fa-solid fa-music fs-1 text-white"></i></div>
+          <canvas id="np-visualizer" width="280" height="60" class="mb-3" style="width:100%;max-width:280px;height:60px"></canvas>
+          <p class="fw-bold mb-0 text-truncate" style="max-width:280px" id="np-name">-</p>
+          <p class="small mb-0" style="color:rgba(245,237,224,.6)" id="np-size">-</p>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span class="small font-monospace" style="color:rgba(245,237,224,.7)" id="np-progress-text">0:00</span>
+          <input type="range" class="audio-progress flex-grow-1" min="0" max="0" step="1" value="0" id="np-seek" oninput="seekAudio(this.value)">
+          <span class="small font-monospace" style="color:rgba(245,237,224,.7)" id="np-duration-text">0:00</span>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-center gap-2 gap-sm-3 mb-3">
+          <button class="icon-btn tooltip-lbl" aria-label="Shuffle" id="np-shuffle" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="toggleShuffle()"><i class="fa-solid fa-shuffle small"></i></button>
+          <button class="icon-btn tooltip-lbl" aria-label="Back 10s" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="skipAudio(-10)"><i class="fa-solid fa-rotate-left small"></i></button>
+          <button class="icon-btn tooltip-lbl" aria-label="Previous track" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="prevTrack()"><i class="fa-solid fa-backward-step"></i></button>
+          <button class="icon-btn" style="width:56px;height:56px;background:#b45309;color:#fff" id="np-playpause" onclick="toggleAudioPlayPause()"><i class="fa-solid fa-play fs-5"></i></button>
+          <button class="icon-btn tooltip-lbl" aria-label="Next track" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="nextTrack()"><i class="fa-solid fa-forward-step"></i></button>
+          <button class="icon-btn tooltip-lbl" aria-label="Forward 10s" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="skipAudio(10)"><i class="fa-solid fa-rotate-right small"></i></button>
+          <button class="icon-btn tooltip-lbl" aria-label="Repeat mode" id="np-repeat" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="cycleRepeatMode()"><i class="fa-solid fa-repeat small"></i></button>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="fa-solid fa-volume-low small" style="color:rgba(245,237,224,.6)"></i>
+          <input type="range" class="volume-range flex-grow-1" min="0" max="1" step="0.01" value="1" id="np-volume" oninput="setVolumeFromUI(this.value)">
+          <select class="form-select form-select-sm" style="width:auto;background:rgba(255,255,255,.08);color:#f5ede0;border-color:rgba(255,255,255,.15)" id="np-speed" onchange="setAudioPlaybackRate(this.value)">
+            <option value="0.5">0.5x</option><option value="0.75">0.75x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option><option value="2">2x</option>
+          </select>
+          <button class="icon-btn tooltip-lbl" aria-label="Download this track" style="background:rgba(5,150,105,.25);color:#34d399" onclick="downloadCurrentAudio()"><i class="fa-solid fa-download small"></i></button>
+        </div>
+
+        <div class="border-top pt-3" style="border-color:rgba(255,255,255,.1)!important">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small fw-bold text-uppercase" style="color:rgba(245,237,224,.5);letter-spacing:.05em">Queue</span>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,.08);color:#f5ede0" onclick="toggleAudioSort()"><i class="fa-solid fa-arrow-down-a-z small me-1"></i><span id="np-sort-label">Newest</span></button>
+          </div>
+          <div id="np-queue-list" style="max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Extract Audio Progress Modal -->
+<div class="modal fade glass-modal" id="extractProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-2">
+      <div class="modal-body p-3 p-sm-4 text-center">
+        <div id="extractStartView">
+          <i class="fa-solid fa-wave-square fs-1 text-success mb-3 d-block"></i>
+          <h3 class="h6 fw-bold mb-2">Extract audio from video?</h3>
+          <p class="small text-muted mb-1 text-truncate" id="extractVideoName">-</p>
+          <p class="small text-muted mb-3">Duration: <span id="extractDurationLabel">0:00</span> — extraction plays through in real time, so it takes about that long. You can keep using the app meanwhile.</p>
+          <div class="d-flex gap-2">
+            <button class="btn text-white flex-fill" style="background:#059669" onclick="startPendingExtraction()"><i class="fa-solid fa-play me-1"></i>Start</button>
+            <button class="btn flex-fill" data-bs-dismiss="modal" onclick="cancelAudioExtraction()">Cancel</button>
+          </div>
+        </div>
+        <div id="extractProgressView" class="d-none">
+          <i class="fa-solid fa-wave-square fs-1 text-success mb-3 d-block"></i>
+          <h3 class="h6 fw-bold mb-2">Extracting audio…</h3>
+          <p class="small text-muted mb-2">Don't close this tab until it's done.</p>
+          <div class="progress mb-2" style="height:10px"><div class="progress-bar bg-success" id="extractProgressBar" style="width:0%"></div></div>
+          <p class="small text-muted mb-3" id="extractProgressText">0:00 / 0:00</p>
+          <button class="btn btn-outline-danger btn-sm" onclick="cancelAudioExtraction()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ZIP Export Progress Modal -->
 <div class="modal fade glass-modal" id="zipProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered">
@@ -539,8 +709,6 @@ body{
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js"></script>
 <script>
 document.addEventListener('touchstart', e => {
     const btn = e.target.closest && e.target.closest('.tooltip-lbl');
@@ -767,6 +935,23 @@ function escapeHtml(str){
 }
 
 /* ======================================================================
+   LAZY SCRIPT LOADING (perf: don't block initial page load with libraries
+   that are only needed occasionally, like ZIP export or HEIC conversion)
+   ====================================================================== */
+const _loadedScripts = {};
+function loadScriptOnce(src){
+    if(_loadedScripts[src]) return _loadedScripts[src];
+    _loadedScripts[src] = new Promise((resolve,reject)=>{
+        const s = document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = () => resolve(true);
+        s.onerror = () => { delete _loadedScripts[src]; reject(new Error('Failed to load '+src)); };
+        document.head.appendChild(s);
+    });
+    return _loadedScripts[src];
+}
+
+/* ======================================================================
    SAFE JS-STRING EMBEDDING (fixes: apostrophes in names breaking onclick='...')
    ====================================================================== */
 function jsAttr(value){
@@ -866,7 +1051,11 @@ const state = {
     audioProgress: 0,
     audioDuration: 0,
     audioVolume: 1,
-    audioLoop: false,
+    audioRepeatMode: 'off', // 'off' | 'one' | 'all'
+    audioShuffle: false,
+    audioPlaybackRate: 1,
+    audioSortOrder: 'date', // 'date' | 'name'
+    nowPlayingOpen: false,
     masterPassword: (() => {
         const raw = localStorage.getItem('sg_master_hash');
         if(!raw) return null;
@@ -882,6 +1071,7 @@ const state = {
     currentPhotoIndex: 0,
     lightboxOpen: false,
     slideshowInterval: null,
+    slideshowIntervalSec: 3,
     zoomScale: 1,
     zoomTranslate: {x:0,y:0},
     unlockedHidden: new Set(),
@@ -997,6 +1187,8 @@ async function getFileBlob(filename){
 }
 async function exportFilesAsZip(zipName, filenames){
     if(!filenames || filenames.length===0){ showToast('Nothing to export','error'); return; }
+    try{ await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'); }
+    catch{ showToast('ZIP library failed to load — check your connection','error'); return; }
     if(typeof JSZip === 'undefined'){ showToast('ZIP library failed to load — check your connection','error'); return; }
     const modalEl = document.getElementById('zipProgressModal');
     const modal = new bootstrap.Modal(modalEl);
@@ -1616,6 +1808,7 @@ async function convertHeicIfNeeded(file){
     const isHeic = /image\/hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
     if(!isHeic) return file;
     try{
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js');
         if(typeof heic2any === 'undefined') throw new Error('heic2any not loaded');
         const converted = await heic2any({blob:file, toType:'image/jpeg', quality:0.9});
         const outBlob = Array.isArray(converted) ? converted[0] : converted;
@@ -1700,80 +1893,445 @@ async function handleThumbnailUpload(album, file){
 async function handleAudioUpload(files){
     const newAudios=[];
     for(const file of files){
-        const arrayBuffer = await file.arrayBuffer();
-        const blob = new Blob([arrayBuffer],{type:file.type});
+        const blob = new Blob([file],{type:file.type});
         const id = `audio-${generateUniqueId()}`;
         const newAudio = {id, blob, name:file.name, date:new Date().toISOString(), size:file.size, type:file.type};
         newAudios.push(newAudio); putAudio(newAudio).catch(handleStorageError);
     }
     state.uploadedAudio = [...state.uploadedAudio, ...newAudios];
+    checkStorageQuota();
     showToast(`${files.length} audio(s) uploaded`);
 }
 function deleteAudioRecord(id){
-    if(state.currentAudioId===id){
-        if(audioEl){ audioEl.pause(); if(audioEl.src && audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src); audioEl=null; }
-        state.currentAudioId=null; state.audioPlaying=false;
-    }
+    if(state.currentAudioId===id) dismissAudio();
     state.uploadedAudio = state.uploadedAudio.filter(a=>a.id!==id);
+    shuffledAudioIds = shuffledAudioIds.filter(i=>i!==id);
     removeAudioRec(id).catch(handleStorageError);
     showToast('Audio deleted');
     renderView(); updateAudioPlayerUI();
 }
 
 /* ======================================================================
-   AUDIO PLAYBACK
+   AUDIO PLAYBACK (advanced: queue, shuffle, repeat, speed, visualizer)
    ====================================================================== */
 function currentAudioFile(){ return state.uploadedAudio.find(a=>a.id===state.currentAudioId); }
+function getSortedAudioList(){
+    const list = [...state.uploadedAudio];
+    if(state.audioSortOrder==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+    else list.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    return list;
+}
+let shuffledAudioIds = [];
+function getPlaybackOrderIds(){
+    const sorted = getSortedAudioList().map(a=>a.id);
+    if(!state.audioShuffle) return sorted;
+    const sortedSet = new Set(sorted);
+    if(shuffledAudioIds.length!==sorted.length || !shuffledAudioIds.every(id=>sortedSet.has(id))){
+        shuffledAudioIds = [...sorted];
+        for(let i=shuffledAudioIds.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [shuffledAudioIds[i],shuffledAudioIds[j]]=[shuffledAudioIds[j],shuffledAudioIds[i]]; }
+    }
+    return shuffledAudioIds;
+}
 function playAudio(audio){
-    if(audioEl){ audioEl.pause(); if(audioEl.src && audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src); }
+    if(audioEl){ audioEl.pause(); audioEl.src=''; if(audioEl._url) URL.revokeObjectURL(audioEl._url); }
     const url = URL.createObjectURL(audio.blob);
     audioEl = new Audio(url);
-    audioEl.loop = state.audioLoop;
+    audioEl._url = url;
+    audioEl.loop = (state.audioRepeatMode==='one');
     audioEl.volume = state.audioVolume;
+    audioEl.playbackRate = state.audioPlaybackRate;
     audioEl.addEventListener('timeupdate', () => { state.audioProgress = audioEl.currentTime; patchAudioProgress(); });
     audioEl.addEventListener('loadedmetadata', () => { state.audioDuration = audioEl.duration; patchAudioProgress(); });
-    audioEl.addEventListener('ended', () => { state.audioPlaying=false; state.audioProgress=0; updateAudioPlayerUI(); });
+    audioEl.addEventListener('ended', () => { handleTrackEnded(); });
     audioEl.addEventListener('error', () => { state.audioPlaying=false; showToast('Audio playback error','error'); updateAudioPlayerUI(); });
     audioEl.play().catch(() => { state.audioPlaying=false; showToast('Unable to play audio','error'); updateAudioPlayerUI(); });
     state.currentAudioId = audio.id; state.audioPlaying = true;
+    setupAudioVisualizer();
     updateAudioPlayerUI();
     if(state.lightboxOpen) updateLightboxChrome();
 }
 function pauseAudio(){ if(audioEl){ audioEl.pause(); state.audioPlaying=false; updateAudioPlayerUI(); if(state.lightboxOpen) updateLightboxChrome(); } }
-function resumeAudio(){ if(audioEl && state.currentAudioId){ audioEl.play().catch(()=>showToast('Unable to resume','error')); state.audioPlaying=true; updateAudioPlayerUI(); if(state.lightboxOpen) updateLightboxChrome(); } }
+function resumeAudio(){
+    if(audioEl && state.currentAudioId){
+        if(audioCtx && audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
+        audioEl.play().catch(()=>showToast('Unable to resume','error'));
+        state.audioPlaying=true; updateAudioPlayerUI(); if(state.lightboxOpen) updateLightboxChrome();
+        startVisualizerLoop();
+    }
+}
 function toggleAudioPlayPause(){ state.audioPlaying ? pauseAudio() : resumeAudio(); }
-function stopAudio(){ if(audioEl){ audioEl.pause(); audioEl.currentTime=0; state.audioPlaying=false; state.audioProgress=0; updateAudioPlayerUI(); } }
 function dismissAudio(){
-    if(audioEl){ audioEl.pause(); if(audioEl.src && audioEl.src.startsWith('blob:')) URL.revokeObjectURL(audioEl.src); audioEl=null; }
+    if(audioEl){ audioEl.pause(); if(audioEl._url) URL.revokeObjectURL(audioEl._url); audioEl=null; }
     state.currentAudioId=null; state.audioPlaying=false; state.audioProgress=0; state.audioDuration=0;
     updateAudioPlayerUI();
     if(state.lightboxOpen) updateLightboxChrome();
 }
-function seekAudio(time){ if(audioEl){ audioEl.currentTime=parseFloat(time); state.audioProgress=parseFloat(time); } }
-function setVolumeFromUI(vol){ state.audioVolume=parseFloat(vol); if(audioEl) audioEl.volume=state.audioVolume; }
-function toggleLoop(){ state.audioLoop=!state.audioLoop; if(audioEl) audioEl.loop=state.audioLoop; updateAudioPlayerUI(); }
+function seekAudio(time){ if(audioEl){ audioEl.currentTime=parseFloat(time); state.audioProgress=parseFloat(time); patchAudioProgress(); } }
+function skipAudio(seconds){
+    if(!audioEl) return;
+    audioEl.currentTime = Math.min(Math.max(audioEl.currentTime+seconds, 0), audioEl.duration||1e9);
+    state.audioProgress = audioEl.currentTime; patchAudioProgress();
+}
+function setVolumeFromUI(vol){ state.audioVolume=parseFloat(vol); if(audioEl) audioEl.volume=state.audioVolume; updateAudioPlayerUI(); }
+function setAudioPlaybackRate(rate){ state.audioPlaybackRate=parseFloat(rate); if(audioEl) audioEl.playbackRate=state.audioPlaybackRate; updateAudioPlayerUI(); }
+function cycleRepeatMode(){
+    state.audioRepeatMode = state.audioRepeatMode==='off' ? 'all' : state.audioRepeatMode==='all' ? 'one' : 'off';
+    if(audioEl) audioEl.loop = (state.audioRepeatMode==='one');
+    updateAudioPlayerUI();
+}
+function toggleShuffle(){ state.audioShuffle=!state.audioShuffle; if(state.audioShuffle) shuffledAudioIds=[]; updateAudioPlayerUI(); showToast(state.audioShuffle?'Shuffle on':'Shuffle off'); }
+function toggleAudioSort(){ state.audioSortOrder = state.audioSortOrder==='date'?'name':'date'; updateAudioPlayerUI(); if(state.activeView==='audio') renderView(); }
+function nextTrack(){
+    const order = getPlaybackOrderIds();
+    if(order.length===0) return;
+    const idx = order.indexOf(state.currentAudioId);
+    const nextIdx = idx>=0 ? (idx+1)%order.length : 0;
+    const nextAudio = state.uploadedAudio.find(a=>a.id===order[nextIdx]);
+    if(nextAudio) playAudio(nextAudio);
+}
+function prevTrack(){
+    const order = getPlaybackOrderIds();
+    if(order.length===0) return;
+    if(state.audioProgress>3 && audioEl){ audioEl.currentTime=0; state.audioProgress=0; patchAudioProgress(); return; }
+    const idx = order.indexOf(state.currentAudioId);
+    const prevIdx = idx>0 ? idx-1 : order.length-1;
+    const prevAudio = state.uploadedAudio.find(a=>a.id===order[prevIdx]);
+    if(prevAudio) playAudio(prevAudio);
+}
+function handleTrackEnded(){
+    // Native `loop` already handles repeat-one, so 'ended' only fires for 'off'/'all' modes.
+    const order = getPlaybackOrderIds();
+    const idx = order.indexOf(state.currentAudioId);
+    if(state.audioRepeatMode==='all' || (idx>=0 && idx<order.length-1)){ nextTrack(); }
+    else { state.audioPlaying=false; state.audioProgress=0; updateAudioPlayerUI(); }
+}
+function downloadAudioById(id){
+    const audio = state.uploadedAudio.find(a=>a.id===id); if(!audio) return;
+    const url = URL.createObjectURL(audio.blob);
+    const a = document.createElement('a'); a.href=url; a.download=audio.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function downloadCurrentAudio(){ if(state.currentAudioId) downloadAudioById(state.currentAudioId); }
+
+/* ---- Web Audio visualizer ---- */
+let audioCtx = null, analyserNode = null, sourceNode = null, visualizerRafId = null;
+function setupAudioVisualizer(){
+    try{
+        if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+        if(sourceNode){ try{ sourceNode.disconnect(); }catch{} }
+        sourceNode = audioCtx.createMediaElementSource(audioEl);
+        if(!analyserNode){ analyserNode = audioCtx.createAnalyser(); analyserNode.fftSize=64; }
+        sourceNode.connect(analyserNode);
+        analyserNode.connect(audioCtx.destination);
+        if(state.nowPlayingOpen) startVisualizerLoop();
+    }catch(e){ console.warn('Visualizer setup failed', e); }
+}
+function startVisualizerLoop(){
+    if(visualizerRafId) return;
+    const canvas = document.getElementById('np-visualizer');
+    if(!canvas || !analyserNode) return;
+    const ctx = canvas.getContext('2d');
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    function draw(){
+        if(!state.nowPlayingOpen || !state.audioPlaying){ visualizerRafId=null; return; }
+        visualizerRafId = requestAnimationFrame(draw);
+        analyserNode.getByteFrequencyData(dataArray);
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0,0,w,h);
+        const barWidth = w/bufferLength*1.8;
+        let x=0;
+        for(let i=0;i<bufferLength;i++){
+            const barHeight = Math.max(2,(dataArray[i]/255)*h);
+            ctx.fillStyle = `rgba(212,169,60,${0.4+dataArray[i]/255*0.6})`;
+            ctx.fillRect(x, h-barHeight, Math.max(1,barWidth-2), barHeight);
+            x += barWidth;
+        }
+    }
+    draw();
+}
+function openNowPlayingModal(){
+    if(!state.currentAudioId){ showToast('No track playing','error'); return; }
+    state.nowPlayingOpen = true;
+    updateAudioPlayerUI();
+    if(audioCtx && audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
+    startVisualizerLoop();
+    const modalEl = document.getElementById('nowPlayingModal');
+    modalEl.addEventListener('hidden.bs.modal', () => { state.nowPlayingOpen=false; }, {once:true});
+    new bootstrap.Modal(modalEl).show();
+}
 
 function updateAudioPlayerUI(){
     const bar = document.getElementById('audio-player-bar');
     const file = currentAudioFile();
-    if(!file){ bar.classList.add('d-none'); return; }
-    bar.classList.remove('d-none');
-    document.getElementById('ap-name').textContent = file.name;
-    document.getElementById('ap-size').textContent = (file.size/1024/1024).toFixed(1)+' MB';
-    document.getElementById('ap-playpause').innerHTML = `<i class="fa-solid ${state.audioPlaying?'fa-pause':'fa-play'}"></i>`;
-    document.getElementById('ap-loop').classList.toggle('text-white', state.audioLoop);
-    document.getElementById('ap-loop').style.background = state.audioLoop ? '#b45309' : '';
-    document.getElementById('ap-loop').style.color = state.audioLoop ? '#fff' : '';
-    document.getElementById('ap-volume').value = state.audioVolume;
+    if(!file){ bar.classList.add('d-none'); }
+    else {
+        bar.classList.remove('d-none');
+        document.getElementById('ap-name').textContent = file.name;
+        document.getElementById('ap-size').textContent = (file.size/1024/1024).toFixed(1)+' MB';
+        document.getElementById('ap-playpause').innerHTML = `<i class="fa-solid ${state.audioPlaying?'fa-pause':'fa-play'}"></i>`;
+        const apRepeat = document.getElementById('ap-repeat');
+        apRepeat.innerHTML = state.audioRepeatMode==='one' ? `<span style="font-size:13px;font-weight:800">1</span>` : `<i class="fa-solid fa-repeat small"></i>`;
+        apRepeat.style.background = state.audioRepeatMode!=='off' ? '#b45309' : '';
+        apRepeat.style.color = state.audioRepeatMode!=='off' ? '#fff' : '';
+    }
+    // Now Playing panel elements (only present while modal exists in DOM, which it always does — just guard anyway)
+    const npName = document.getElementById('np-name');
+    if(npName){
+        npName.textContent = file ? file.name : '-';
+        document.getElementById('np-size').textContent = file ? `${(file.size/1024/1024).toFixed(1)} MB` : '-';
+        document.getElementById('np-playpause').innerHTML = `<i class="fa-solid ${state.audioPlaying?'fa-pause':'fa-play'} fs-5"></i>`;
+        const npRepeat = document.getElementById('np-repeat');
+        npRepeat.innerHTML = state.audioRepeatMode==='one' ? `<span style="font-size:13px;font-weight:800">1</span>` : `<i class="fa-solid fa-repeat small"></i>`;
+        npRepeat.style.background = state.audioRepeatMode!=='off' ? '#b45309' : 'rgba(255,255,255,.08)';
+        document.getElementById('np-shuffle').style.background = state.audioShuffle ? '#b45309' : 'rgba(255,255,255,.08)';
+        document.getElementById('np-volume').value = state.audioVolume;
+        document.getElementById('np-speed').value = state.audioPlaybackRate;
+        document.getElementById('np-sort-label').textContent = state.audioSortOrder==='date' ? 'Newest' : 'A-Z';
+        renderQueueList();
+    }
     patchAudioProgress();
 }
+function renderQueueList(){
+    const el = document.getElementById('np-queue-list');
+    if(!el) return;
+    const order = getPlaybackOrderIds();
+    if(order.length===0){ el.innerHTML = `<p class="small text-center py-3" style="color:rgba(245,237,224,.5)">No tracks yet.</p>`; return; }
+    el.innerHTML = order.map(id => {
+        const a = state.uploadedAudio.find(x=>x.id===id); if(!a) return '';
+        const isCur = id===state.currentAudioId;
+        return `<div class="d-flex align-items-center gap-2 py-2 px-2 rounded-3 mb-1" style="cursor:pointer;background:${isCur?'rgba(180,83,9,.25)':'transparent'}" onclick='pickAndPlay(${jsAttr(id)})'>
+            <i class="fa-solid ${isCur&&state.audioPlaying?'fa-volume-high':'fa-music'} small" style="color:${isCur?'#d4a93c':'rgba(245,237,224,.4)'};width:16px"></i>
+            <span class="small text-truncate flex-grow-1" style="color:${isCur?'#f5ede0':'rgba(245,237,224,.75)'}">${escapeHtml(a.name)}</span>
+            <button class="btn btn-sm p-1" style="color:rgba(245,237,224,.5)" onclick='event.stopPropagation();downloadAudioById(${jsAttr(id)})'><i class="fa-solid fa-download" style="font-size:11px"></i></button>
+        </div>`;
+    }).join('');
+}
+function pickAndPlay(id){ const a = state.uploadedAudio.find(x=>x.id===id); if(a) playAudio(a); }
 function patchAudioProgress(){
-    const seek = document.getElementById('ap-seek');
-    seek.max = state.audioDuration || 0; seek.value = state.audioProgress || 0;
-    document.getElementById('ap-progress-text').textContent = formatTime(state.audioProgress);
-    document.getElementById('ap-duration-text').textContent = formatTime(state.audioDuration);
     const pct = state.audioDuration ? (state.audioProgress/state.audioDuration*100) : 0;
-    seek.style.backgroundImage = `linear-gradient(90deg,#c084fc ${pct}%,#e2d9c0 ${pct}%)`;
+    const gradient = `linear-gradient(90deg,#c084fc ${pct}%,#e2d9c0 ${pct}%)`;
+    ['ap-seek','np-seek'].forEach(id=>{
+        const seek = document.getElementById(id); if(!seek) return;
+        seek.max = state.audioDuration || 0; seek.value = state.audioProgress || 0;
+        seek.style.backgroundImage = gradient;
+    });
+    ['ap-progress-text','np-progress-text'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = formatTime(state.audioProgress); });
+    ['ap-duration-text','np-duration-text'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent = formatTime(state.audioDuration); });
+}
+
+/* ======================================================================
+   PHOTO EDITOR (crop, rotate, filters, adjustments — canvas-based)
+   ====================================================================== */
+let editorState = null;
+function openPhotoEditor(filename){
+    const media = state.uploadedMedia.find(m=>m.filename===filename);
+    if(!media || media.type!=='image'){ showToast('Only photos can be edited','error'); return; }
+    const img = new Image();
+    img.onload = () => {
+        editorState = { filename, img, rotation:0, flipH:false, brightness:0, contrast:0, saturation:0, grayscale:0, sepia:0, cropAspect:null, zoom:1 };
+        resetEditorControlsUI();
+        renderEditorPreview();
+        new bootstrap.Modal(document.getElementById('photoEditorModal')).show();
+    };
+    img.onerror = () => showToast('Could not load photo for editing','error');
+    img.src = getItemSrc(filename);
+}
+function resetEditorControlsUI(){
+    [['editBrightness','editBrightnessVal'],['editContrast','editContrastVal'],['editSaturation','editSaturationVal']].forEach(([id,valId])=>{
+        const el=document.getElementById(id); if(el) el.value=0;
+        const valEl=document.getElementById(valId); if(valEl) valEl.textContent='0';
+    });
+    document.querySelectorAll('.editor-filter-btn').forEach(b=>b.classList.remove('active-filter'));
+    document.querySelector('.editor-filter-btn[data-filter="none"]')?.classList.add('active-filter');
+    document.querySelectorAll('.editor-crop-btn').forEach(b=>b.classList.remove('active-filter'));
+    document.querySelector('.editor-crop-btn[data-aspect="original"]')?.classList.add('active-filter');
+    const zoomSlider = document.getElementById('editZoom'); if(zoomSlider) zoomSlider.value=1;
+}
+function computeCropRect(natW, natH, aspect, zoom){
+    const targetAspect = aspect || (natW/natH);
+    let cropW, cropH;
+    if(natW/natH > targetAspect){ cropH = natH; cropW = cropH*targetAspect; }
+    else { cropW = natW; cropH = cropW/targetAspect; }
+    cropW = Math.max(1, Math.min(natW, cropW/Math.max(1,zoom)));
+    cropH = Math.max(1, Math.min(natH, cropH/Math.max(1,zoom)));
+    return { x:(natW-cropW)/2, y:(natH-cropH)/2, w:cropW, h:cropH };
+}
+function buildEditorFilterString(st){
+    let f = `brightness(${100+st.brightness}%) contrast(${100+st.contrast}%) saturate(${100+st.saturation}%)`;
+    if(st.grayscale) f += ` grayscale(${st.grayscale}%)`;
+    if(st.sepia) f += ` sepia(${st.sepia}%)`;
+    return f;
+}
+function drawEditorToCanvas(canvas, maxDim){
+    if(!editorState) return;
+    const {img, rotation, flipH, cropAspect, zoom} = editorState;
+    const natW = img.naturalWidth, natH = img.naturalHeight;
+    const crop = computeCropRect(natW, natH, cropAspect, zoom);
+    let outW = crop.w, outH = crop.h;
+    const scaleDown = Math.min(1, maxDim/Math.max(outW,outH));
+    outW = Math.max(1, Math.round(outW*scaleDown)); outH = Math.max(1, Math.round(outH*scaleDown));
+    const rotated = (rotation===90 || rotation===270);
+    canvas.width = rotated ? outH : outW;
+    canvas.height = rotated ? outW : outH;
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    ctx.filter = buildEditorFilterString(editorState);
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(rotation*Math.PI/180);
+    if(flipH) ctx.scale(-1,1);
+    ctx.drawImage(img, crop.x, crop.y, crop.w, crop.h, -outW/2, -outH/2, outW, outH);
+    ctx.restore();
+}
+function renderEditorPreview(){ const canvas = document.getElementById('editorCanvas'); if(canvas) drawEditorToCanvas(canvas, 600); }
+function setEditorRotation(delta){ editorState.rotation = (editorState.rotation+delta+360)%360; renderEditorPreview(); }
+function toggleEditorFlip(){ editorState.flipH = !editorState.flipH; renderEditorPreview(); }
+function setEditorAdjust(key, value){ editorState[key] = parseInt(value); renderEditorPreview(); }
+function setEditorFilterPreset(preset){
+    document.querySelectorAll('.editor-filter-btn').forEach(b=>b.classList.remove('active-filter'));
+    document.querySelector(`.editor-filter-btn[data-filter="${preset}"]`)?.classList.add('active-filter');
+    const presets = {
+        none:{brightness:0,contrast:0,saturation:0,grayscale:0,sepia:0},
+        bw:{brightness:0,contrast:10,saturation:0,grayscale:100,sepia:0},
+        sepia:{brightness:0,contrast:5,saturation:-10,grayscale:0,sepia:70},
+        vivid:{brightness:5,contrast:15,saturation:40,grayscale:0,sepia:0},
+        cool:{brightness:0,contrast:5,saturation:15,grayscale:0,sepia:0},
+        warm:{brightness:5,contrast:0,saturation:15,grayscale:0,sepia:20},
+        fade:{brightness:10,contrast:-15,saturation:-20,grayscale:0,sepia:10},
+    };
+    Object.assign(editorState, presets[preset]||presets.none);
+    [['brightness','editBrightness','editBrightnessVal'],['contrast','editContrast','editContrastVal'],['saturation','editSaturation','editSaturationVal']].forEach(([key,id,valId])=>{
+        const el=document.getElementById(id); if(el) el.value=editorState[key];
+        const valEl=document.getElementById(valId); if(valEl) valEl.textContent=editorState[key];
+    });
+    renderEditorPreview();
+}
+function setEditorCropAspect(aspect, btnEl){
+    document.querySelectorAll('.editor-crop-btn').forEach(b=>b.classList.remove('active-filter'));
+    btnEl.classList.add('active-filter');
+    editorState.cropAspect = aspect;
+    renderEditorPreview();
+}
+function setEditorZoom(val){ editorState.zoom = parseFloat(val); renderEditorPreview(); }
+async function saveEditedPhoto(asNewCopy){
+    if(!editorState) return;
+    const original = state.uploadedMedia.find(m=>m.filename===editorState.filename);
+    if(!original){ showToast('Original photo not found','error'); return; }
+    const outCanvas = document.createElement('canvas');
+    drawEditorToCanvas(outCanvas, 2200);
+    const dataURL = outCanvas.toDataURL('image/jpeg', 0.9);
+    let hash=null; try{ hash = await hashDataURL(dataURL); }catch{}
+
+    if(asNewCopy){
+        const filename = `${original.album}-${generateUniqueId()}.jpg`;
+        const newMedia = {filename, dataURL, album:original.album, date:new Date().toISOString(), type:'image', hash, tags:[...(original.tags||[])]};
+        state.uploadedMedia = [...state.uploadedMedia, newMedia];
+        putItemInStore(STORE_MEDIA, newMedia).catch(handleStorageError);
+        showToast('Saved as a new photo');
+    } else {
+        const updated = {...original, dataURL, hash};
+        state.uploadedMedia = state.uploadedMedia.map(m=>m.filename===original.filename?updated:m);
+        putItemInStore(STORE_MEDIA, updated).catch(handleStorageError);
+        showToast('Photo updated');
+    }
+    checkStorageQuota();
+    bootstrap.Modal.getInstance(document.getElementById('photoEditorModal'))?.hide();
+    editorState = null;
+    computePeopleData();
+    if(state.lightboxOpen){ renderLightboxContent(); updateLightboxChrome(); }
+    if(state.activeView==='gallery') renderGalleryGridOnly();
+}
+function closePhotoEditor(){ editorState = null; }
+
+/* ======================================================================
+   AUDIO EXTRACTION FROM VIDEO (captureStream + MediaRecorder — native
+   browser APIs, no heavy ffmpeg-style library needed)
+   ====================================================================== */
+let pendingExtraction = null, extractionState = null;
+function updateExtractProgress(current, total){
+    const pct = total ? Math.min(100, (current/total)*100) : 0;
+    const bar = document.getElementById('extractProgressBar'); if(bar) bar.style.width = pct+'%';
+    const txt = document.getElementById('extractProgressText'); if(txt) txt.textContent = `${formatTime(current)} / ${formatTime(total)}`;
+}
+async function extractAudioFromVideo(filename){
+    const media = state.uploadedMedia.find(m=>m.filename===filename);
+    if(!media){ showToast('Video not found','error'); return; }
+    const src = getItemSrc(filename);
+
+    const video = document.createElement('video');
+    video.src = src; video.muted=false; video.playsInline=true; video.preload='auto';
+    video.style.cssText='position:fixed;left:-9999px;top:0;width:2px;height:2px';
+    document.body.appendChild(video);
+    const cleanup = () => { try{ document.body.removeChild(video); }catch{} };
+
+    try{
+        await new Promise((resolve,reject)=>{
+            video.addEventListener('loadedmetadata', resolve, {once:true});
+            video.addEventListener('error', ()=>reject(new Error('load error')), {once:true});
+        });
+    }catch{ cleanup(); showToast('Could not load this video for extraction','error'); return; }
+
+    const captureFn = video.captureStream || video.mozCaptureStream;
+    if(typeof captureFn !== 'function'){ cleanup(); showToast("Audio extraction isn't supported in this browser — try desktop Chrome or Firefox",'error'); return; }
+    if(!window.MediaRecorder){ cleanup(); showToast('Audio recording is not supported in this browser','error'); return; }
+
+    let audioTracks;
+    try{ audioTracks = captureFn.call(video).getAudioTracks(); }
+    catch{ cleanup(); showToast('Could not capture audio from this video','error'); return; }
+    if(!audioTracks || audioTracks.length===0){ cleanup(); showToast('This video has no audio track','error'); return; }
+
+    pendingExtraction = {video, audioTracks, filename, cleanup};
+    document.getElementById('extractStartView').classList.remove('d-none');
+    document.getElementById('extractProgressView').classList.add('d-none');
+    document.getElementById('extractVideoName').textContent = filename;
+    document.getElementById('extractDurationLabel').textContent = formatTime(video.duration);
+    new bootstrap.Modal(document.getElementById('extractProgressModal')).show();
+}
+async function startPendingExtraction(){
+    if(!pendingExtraction) return;
+    const {video, audioTracks, filename, cleanup} = pendingExtraction;
+    document.getElementById('extractStartView').classList.add('d-none');
+    document.getElementById('extractProgressView').classList.remove('d-none');
+    updateExtractProgress(0, video.duration);
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+    const audioStream = new MediaStream(audioTracks);
+    const chunks = [];
+    const recorder = new MediaRecorder(audioStream, {mimeType});
+    recorder.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+
+    let cancelled = false;
+    extractionState = { cancel(){ cancelled=true; try{recorder.stop();}catch{} try{video.pause();}catch{} } };
+    video.ontimeupdate = () => updateExtractProgress(video.currentTime, video.duration);
+
+    await new Promise(resolveAll => {
+        recorder.onstop = resolveAll;
+        recorder.start();
+        video.play().catch(()=>{ cancelled=true; try{recorder.stop();}catch{} });
+        video.addEventListener('ended', () => { try{ recorder.stop(); }catch{} }, {once:true});
+    });
+
+    cleanup();
+    bootstrap.Modal.getInstance(document.getElementById('extractProgressModal'))?.hide();
+    extractionState = null; pendingExtraction = null;
+
+    if(cancelled){ showToast('Extraction cancelled'); return; }
+    if(chunks.length===0){ showToast('No audio captured from this video','error'); return; }
+
+    const blob = new Blob(chunks, {type:mimeType});
+    const id = `audio-${generateUniqueId()}`;
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    const name = `${baseName} (extracted).webm`;
+    const newAudio = {id, blob, name, date:new Date().toISOString(), size:blob.size, type:mimeType};
+    state.uploadedAudio = [...state.uploadedAudio, newAudio];
+    putAudio(newAudio).catch(handleStorageError);
+    checkStorageQuota();
+    showToast('Audio extracted — saved to your Audio Library');
+    if(state.activeView==='audio') renderView();
+}
+function cancelAudioExtraction(){
+    if(extractionState){ extractionState.cancel(); }
+    else if(pendingExtraction){ pendingExtraction.cleanup(); pendingExtraction=null; bootstrap.Modal.getInstance(document.getElementById('extractProgressModal'))?.hide(); }
 }
 
 /* ======================================================================
@@ -1846,9 +2404,20 @@ function toggleSlideshow(){
     if(state.slideshowInterval){ clearInterval(state.slideshowInterval); state.slideshowInterval=null; }
     else{
         nextImage();
-        state.slideshowInterval = setInterval(()=>{ state.currentPhotoIndex=(state.currentPhotoIndex+1)%state.currentGallery.length; resetZoomState(); renderLightboxContent(); updateLightboxChrome(); }, 3000);
+        state.slideshowInterval = setInterval(()=>{ nextImage(); }, state.slideshowIntervalSec*1000);
     }
     document.getElementById('lb-slideshow-icon').className = `fa-solid small ${state.slideshowInterval?'fa-pause':'fa-play'}`;
+}
+function cycleSlideshowSpeed(){
+    const options = [3,5,8];
+    const idx = options.indexOf(state.slideshowIntervalSec);
+    state.slideshowIntervalSec = options[(idx+1)%options.length];
+    const label = document.getElementById('lb-slideshow-speed'); if(label) label.textContent = state.slideshowIntervalSec+'s';
+    if(state.slideshowInterval){
+        clearInterval(state.slideshowInterval);
+        state.slideshowInterval = setInterval(()=>{ nextImage(); }, state.slideshowIntervalSec*1000);
+    }
+    showToast(`Slideshow speed: ${state.slideshowIntervalSec}s per photo`);
 }
 function deleteCurrentImage(){
     if(state.currentGallery.length && state.currentPhotoIndex>=0){
@@ -1884,6 +2453,12 @@ function applyZoomTransform(){
     if(container) container.style.transform = `scale(${state.zoomScale}) translate(${state.zoomTranslate.x}px, ${state.zoomTranslate.y}px)`;
     const pct = document.getElementById('lb-zoom-pct'); if(pct) pct.textContent = Math.round(state.zoomScale*100)+'%';
 }
+let _zoomRafPending = false;
+function scheduleApplyZoomTransform(){
+    if(_zoomRafPending) return;
+    _zoomRafPending = true;
+    requestAnimationFrame(() => { applyZoomTransform(); _zoomRafPending=false; });
+}
 
 function renderLightboxContent(){
     const filename = state.currentGallery[state.currentPhotoIndex];
@@ -1916,6 +2491,7 @@ function renderLightboxContent(){
                     <select class="form-select form-select-sm bg-black bg-opacity-50 text-white border-white border-opacity-25 flex-shrink-0" style="width:auto" id="lb-video-rate">
                         <option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option>
                     </select>
+                    <button class="icon-btn flex-shrink-0 tooltip-lbl" aria-label="Extract audio" style="width:32px;height:32px;background:rgba(5,150,105,.5);color:#fff" onclick='event.stopPropagation();extractAudioFromVideo(${jsAttr(filename)})'><i class="fa-solid fa-wave-square small"></i></button>
                     <button class="icon-btn flex-shrink-0" style="width:32px;height:32px;background:rgba(255,255,255,.2);color:#fff" id="lb-video-pip"><i class="fa-solid fa-clone small"></i></button>
                     <button class="icon-btn flex-shrink-0" style="width:32px;height:32px;background:rgba(255,255,255,.2);color:#fff" id="lb-video-fullscreen"><i class="fa-solid fa-expand small"></i></button>
                 </div>
@@ -1923,7 +2499,7 @@ function renderLightboxContent(){
         </div>`;
         bindLightboxVideo();
     } else {
-        contentEl.innerHTML = `<div class="zoom-container"><img src="${escapeHtml(src)}" alt="${escapeHtml(filename)}" draggable="false" style="max-height:90vh;max-width:90vw;object-fit:contain;border-radius:.5rem;box-shadow:0 25px 50px rgba(0,0,0,.5)"></div>`;
+        contentEl.innerHTML = `<div class="zoom-container"><img src="${escapeHtml(src)}" alt="${escapeHtml(filename)}" draggable="false" decoding="async" style="max-height:90vh;max-width:90vw;object-fit:contain;border-radius:.5rem;box-shadow:0 25px 50px rgba(0,0,0,.5)"></div>`;
         applyZoomTransform();
         const zc = contentEl.querySelector('.zoom-container');
         zc.addEventListener('mousedown', onZoomMouseDown);
@@ -1980,7 +2556,7 @@ document.addEventListener('mousemove', (e) => {
     if(!lightboxDragging) return;
     lightboxWasDragging=true;
     state.zoomTranslate = {x:e.clientX-lightboxDragStart.x, y:e.clientY-lightboxDragStart.y};
-    applyZoomTransform();
+    scheduleApplyZoomTransform();
 });
 document.addEventListener('mouseup', () => { lightboxDragging=false; });
 
@@ -1994,6 +2570,9 @@ function updateLightboxChrome(){
     document.getElementById('lb-fav-icon').style.fontSize = '1.1rem';
     const showDelete = state.uploadedMedia.some(i=>i.filename===filename) && !inTrash;
     document.getElementById('lb-delete-btn').classList.toggle('d-none', !showDelete);
+    const editedMedia = state.uploadedMedia.find(i=>i.filename===filename);
+    const showEdit = editedMedia && editedMedia.type==='image' && !inTrash;
+    document.getElementById('lb-edit-btn').classList.toggle('d-none', !showEdit);
     const musicToggle = document.getElementById('lb-music-toggle');
     const cur = currentAudioFile();
     musicToggle.classList.toggle('d-none', !cur);
@@ -2074,11 +2653,11 @@ document.getElementById('lightbox-overlay').addEventListener('touchmove', (e)=>{
         e.preventDefault();
         const newDist = getTouchDistance(e.touches);
         state.zoomScale = Math.min(3, Math.max(1, touchPinchStartScale*(newDist/touchPinchStartDist)));
-        applyZoomTransform();
+        scheduleApplyZoomTransform();
     } else if(e.touches.length===1 && touchIsPanning && touchPanStart){
         e.preventDefault();
         state.zoomTranslate = {x:e.touches[0].clientX-touchPanStart.x, y:e.touches[0].clientY-touchPanStart.y};
-        applyZoomTransform();
+        scheduleApplyZoomTransform();
     }
 }, {passive:false});
 document.getElementById('lightbox-overlay').addEventListener('touchend', (e)=>{
@@ -2368,6 +2947,103 @@ function submitRenameAlbum(){
 
 function openBackupModal(){ new bootstrap.Modal('#backupModal').show(); }
 
+/* ======================================================================
+   STORAGE & INSIGHTS DASHBOARD
+   ====================================================================== */
+function estimateItemSize(m){
+    if(m.blob) return m.blob.size;
+    if(m.dataURL) return Math.round(m.dataURL.length*0.75);
+    return 0;
+}
+function formatBytes(bytes){
+    if(!bytes) return '0 KB';
+    if(bytes < 1024*1024) return (bytes/1024).toFixed(0)+' KB';
+    if(bytes < 1024*1024*1024) return (bytes/1024/1024).toFixed(1)+' MB';
+    return (bytes/1024/1024/1024).toFixed(2)+' GB';
+}
+function statCardHTML(label, count, size, icon, color){
+    return `<div class="col"><div class="bg-body-secondary rounded-3 p-2 text-center h-100">
+        <i class="fa-solid ${icon} mb-1" style="color:${color}"></i>
+        <p class="fw-bold mb-0 small">${count}</p>
+        <p class="text-muted mb-0" style="font-size:10px">${label}</p>
+        <p class="text-muted mb-0" style="font-size:10px">${formatBytes(size)}</p>
+    </div></div>`;
+}
+async function openInsightsModal(){
+    new bootstrap.Modal(document.getElementById('insightsModal')).show();
+    const body = document.getElementById('insightsBody');
+    body.innerHTML = `<div class="text-center py-4"><i class="fa-solid fa-spinner fa-spin text-warning"></i></div>`;
+
+    let quotaHtml = '';
+    try{
+        if(navigator.storage && navigator.storage.estimate){
+            const {usage, quota} = await navigator.storage.estimate();
+            if(quota){
+                const pct = Math.min(100, Math.round((usage/quota)*100));
+                quotaHtml = `<div class="mb-4">
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="fw-bold">Device Storage Used</span>
+                        <span class="text-muted">${(usage/1024/1024).toFixed(0)} MB / ${(quota/1024/1024/1024).toFixed(1)} GB</span>
+                    </div>
+                    <div class="progress" style="height:10px"><div class="progress-bar ${pct>85?'bg-danger':pct>60?'bg-warning':'bg-success'}" style="width:${pct}%"></div></div>
+                </div>`;
+            }
+        }
+    }catch{}
+
+    const images = state.uploadedMedia.filter(m=>m.type==='image');
+    const videos = state.uploadedMedia.filter(m=>m.type==='video');
+    const totalImageSize = images.reduce((s,m)=>s+estimateItemSize(m),0);
+    const totalVideoSize = videos.reduce((s,m)=>s+estimateItemSize(m),0);
+    const totalAudioSize = state.uploadedAudio.reduce((s,a)=>s+(a.blob?a.blob.size:(a.size||0)),0);
+    const totalTrashSize = state.deletedMedia.reduce((s,m)=>s+estimateItemSize(m),0);
+
+    const overviewHtml = `<div class="row row-cols-2 row-cols-sm-4 g-2 mb-4">
+        ${statCardHTML('Photos', images.length, totalImageSize, 'fa-image', '#2563eb')}
+        ${statCardHTML('Videos', videos.length, totalVideoSize, 'fa-video', '#e11d48')}
+        ${statCardHTML('Audio', state.uploadedAudio.length, totalAudioSize, 'fa-music', '#059669')}
+        ${statCardHTML('Trash', state.deletedMedia.length, totalTrashSize, 'fa-trash', '#78716c')}
+    </div>`;
+
+    const albumStats = {};
+    state.uploadedMedia.forEach(m=>{
+        if(!albumStats[m.album]) albumStats[m.album] = {count:0, size:0};
+        albumStats[m.album].count++;
+        albumStats[m.album].size += estimateItemSize(m);
+    });
+    const topAlbums = Object.entries(albumStats).sort((a,b)=>b[1].size-a[1].size).slice(0,6);
+    const albumsHtml = topAlbums.length ? `<div class="mb-4">
+        <p class="small fw-bold text-uppercase text-muted mb-2">Largest Albums</p>
+        ${topAlbums.map(([name,d])=>`<div class="d-flex justify-content-between align-items-center py-1 small border-bottom">
+            <span class="text-truncate">${escapeHtml(name)}</span>
+            <span class="text-muted flex-shrink-0 ms-2">${d.count} items · ${formatBytes(d.size)}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+    const allFiles = [
+        ...state.uploadedMedia.map(m=>({name:m.filename, _size:estimateItemSize(m)})),
+        ...state.uploadedAudio.map(a=>({name:a.name, _size:a.blob?a.blob.size:(a.size||0)}))
+    ];
+    const largest = allFiles.sort((a,b)=>b._size-a._size).slice(0,8);
+    const largestHtml = largest.length ? `<div class="mb-3">
+        <p class="small fw-bold text-uppercase text-muted mb-2">Largest Files</p>
+        ${largest.map(f=>`<div class="d-flex justify-content-between align-items-center py-1 small border-bottom">
+            <span class="text-truncate">${escapeHtml(f.name)}</span>
+            <span class="text-muted flex-shrink-0 ms-2">${formatBytes(f._size)}</span>
+        </div>`).join('')}
+    </div>` : '';
+
+    const cleanupHtml = (state.deletedMedia.length>0) ? `<div class="bg-body-secondary rounded-3 p-3 d-flex justify-content-between align-items-center gap-2">
+        <div>
+            <p class="fw-medium mb-0 small">Trash has ${state.deletedMedia.length} item(s)</p>
+            <p class="text-muted mb-0" style="font-size:11px">Emptying frees up ${formatBytes(totalTrashSize)}</p>
+        </div>
+        <button class="btn btn-sm btn-danger flex-shrink-0" onclick="bootstrap.Modal.getInstance(document.getElementById('insightsModal')).hide();clearTrash()">Empty</button>
+    </div>` : '';
+
+    body.innerHTML = quotaHtml + overviewHtml + albumsHtml + largestHtml + cleanupHtml;
+}
+
 function openSettingsModal(){
     document.getElementById('ignoreNameInput').value='';
     renderIgnoreNamesChips();
@@ -2471,7 +3147,7 @@ function renderAlbumGridOnly(){
         html += `
         <div class="col">
             <div class="album-card" onclick='handleAlbumClick(${jsAttr(name)})'>
-                <img src="${escapeHtml(getThumbUrl(name))}" alt="${escapeHtml(name)}" loading="lazy" class="img-loading" onload="this.classList.add('img-loaded')" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name).replace(/'/g,'%27')}&background=7e5bef&color=ffd700'">
+                <img src="${escapeHtml(getThumbUrl(name))}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" class="img-loading" onload="this.classList.add('img-loaded')" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name).replace(/'/g,'%27')}&background=7e5bef&color=ffd700'">
                 <div class="grad"></div>
                 <div class="card-info"><h3 class="h6 fw-bold text-truncate mb-1">${escapeHtml(name)}</h3><span class="chip" style="background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.3)">${data.count} items</span></div>
                 <div class="card-actions">
@@ -2520,7 +3196,7 @@ function favoritesZoneHTML(){
                 const isVideo = media?.type==='video' || file.toLowerCase().endsWith('.mp4');
                 return `<div class="fav-item" style="cursor:pointer" onclick='openFavoriteLightbox(${jsAttr(file)})'>
                     <div class="rounded-4 overflow-hidden shadow-sm" style="aspect-ratio:1/1;background:#e7e5e4">
-                        ${isVideo?`<video src="${escapeHtml(src)}" muted playsinline style="width:100%;height:100%;object-fit:cover"></video>`:`<img src="${escapeHtml(src)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" class="img-loading" onload="this.classList.add('img-loaded')">`}
+                        ${isVideo?`<video src="${escapeHtml(src)}" muted playsinline style="width:100%;height:100%;object-fit:cover"></video>`:`<img src="${escapeHtml(src)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover" class="img-loading" onload="this.classList.add('img-loaded')">`}
                     </div>
                 </div>`;
             }).join('')}
@@ -2538,12 +3214,12 @@ function galleryViewHTML(){
     return `
     <div class="animate-enter pb-5">
         <div class="sticky-bar mb-4">
-            <div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3" style="backdrop-filter:blur(16px);border-color:rgba(217,180,110,.4)!important">
+            <div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3" style="backdrop-filter:blur(10px);border-color:rgba(217,180,110,.4)!important">
                 <div class="d-flex align-items-center gap-3">
                     <button class="icon-btn" onclick="setActiveView('people')"><i class="fa-solid fa-arrow-left small"></i></button>
                     <div class="d-flex align-items-center gap-2">
                         <div class="rounded-circle overflow-hidden d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:#e7e5e4;border:2px solid rgba(217,180,110,.4)">
-                            ${avatarSrc ? `<img src="${escapeHtml(avatarSrc)}" style="width:100%;height:100%;object-fit:cover">` : `<i class="fa-solid ${isTrash?'fa-trash':state.activeAlbum==='Favorites'?'fa-heart text-danger':state.activeAlbum==='All Photos'?'fa-layer-group text-warning':state.activeAlbum==='Recent Uploads'?'fa-clock text-success':'fa-tag text-warning'}"></i>`}
+                            ${avatarSrc ? `<img src="${escapeHtml(avatarSrc)}" decoding="async" style="width:100%;height:100%;object-fit:cover">` : `<i class="fa-solid ${isTrash?'fa-trash':state.activeAlbum==='Favorites'?'fa-heart text-danger':state.activeAlbum==='All Photos'?'fa-layer-group text-warning':state.activeAlbum==='Recent Uploads'?'fa-clock text-success':'fa-tag text-warning'}"></i>`}
                         </div>
                         <div>
                             <h2 class="h6 fw-bold mb-0">${escapeHtml(state.activeAlbum||'')}</h2>
@@ -2659,14 +3335,14 @@ function renderGalleryGridOnly(){
         else { filename=item; src=getItemSrc(filename); const media=state.uploadedMedia.find(m=>m.filename===filename); isVideo = media?.type==='video' || filename.toLowerCase().endsWith('.mp4'); realIdx=state.currentGallery.indexOf(filename); }
         const isSelected = state.selectedItems.has(filename);
         const canSelect = state.selectionMode && !isTrash;
-        const mediaEl = isVideo ? `<video src="${escapeHtml(src)}" muted playsinline preload="metadata"></video>` : `<img src="${escapeHtml(src)}" loading="lazy" class="img-loading" onload="this.classList.add('img-loaded')">`;
+        const mediaEl = isVideo ? `<video src="${escapeHtml(src)}" muted playsinline preload="metadata"></video>` : `<img src="${escapeHtml(src)}" loading="lazy" decoding="async" class="img-loading" onload="this.classList.add('img-loaded')">`;
 
         let actions = '';
         if(isTrash){
             actions = `<button class="mini-btn" style="background:#059669" onclick='event.stopPropagation();restoreUploadedMedia(${jsAttr(filename)})'><i class="fa-solid fa-rotate-left" style="font-size:10px"></i></button>
                        <button class="mini-btn" style="background:#dc2626" onclick='event.stopPropagation();permanentlyDeleteMedia(${jsAttr(filename)})'><i class="fa-solid fa-trash" style="font-size:10px"></i></button>`;
         } else if(state.uploadedMedia.some(m=>m.filename===filename)){
-            actions = `<button class="mini-btn" style="background:#ef4444" onclick='event.stopPropagation();deleteUploadedMedia(${jsAttr(filename)})'><i class="fa-solid fa-trash" style="font-size:10px"></i></button>`;
+            actions = `${isVideo?`<button class="mini-btn tooltip-lbl" aria-label="Extract audio" style="background:rgba(5,150,105,.85)" onclick='event.stopPropagation();extractAudioFromVideo(${jsAttr(filename)})'><i class="fa-solid fa-wave-square" style="font-size:10px"></i></button>`:''}<button class="mini-btn" style="background:#ef4444" onclick='event.stopPropagation();deleteUploadedMedia(${jsAttr(filename)})'><i class="fa-solid fa-trash" style="font-size:10px"></i></button>`;
         }
 
         const infoBadge = (state.viewSettings.showInfo && !isTrash) ? `<div class="info-badge"><p>${escapeHtml(filename)}</p></div>` : '';
@@ -2737,7 +3413,7 @@ function timelineViewHTML(){
             const isVideo = m.type==='video';
             const src = getItemSrc(m.filename);
             return `<div class="col"><div class="gallery-item square" onclick="openLightbox(${indexByFilename.get(m.filename)})">
-                ${isVideo?`<video src="${escapeHtml(src)}" muted playsinline preload="metadata"></video><div class="play-badge"><i class="fa-solid fa-play"></i></div>`:`<img src="${escapeHtml(src)}" loading="lazy" class="img-loading" onload="this.classList.add('img-loaded')">`}
+                ${isVideo?`<video src="${escapeHtml(src)}" muted playsinline preload="metadata"></video><div class="play-badge"><i class="fa-solid fa-play"></i></div>`:`<img src="${escapeHtml(src)}" loading="lazy" decoding="async" class="img-loading" onload="this.classList.add('img-loaded')">`}
             </div></div>`;
         }).join('')}
         </div></div>`;
@@ -2746,7 +3422,7 @@ function timelineViewHTML(){
     return html;
 }
 function galleryHeaderBackOnly(title, icon, countLabel){
-    return `<div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between" style="backdrop-filter:blur(16px);border-color:rgba(217,180,110,.4)!important">
+    return `<div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between" style="backdrop-filter:blur(10px);border-color:rgba(217,180,110,.4)!important">
         <div class="d-flex align-items-center gap-3">
             <button class="icon-btn" onclick="setActiveView('people')"><i class="fa-solid fa-arrow-left small"></i></button>
             <h2 class="h6 fw-bold mb-0"><i class="fa-solid ${icon} text-warning me-2"></i>${escapeHtml(title)}</h2>
@@ -2795,7 +3471,7 @@ function renderDuplicatesBody(){
             ${group.map(m => `
                 <div class="col text-center">
                     <div class="rounded-3 overflow-hidden mb-2 bg-body-secondary" style="aspect-ratio:1/1">
-                        ${m.type==='video'?`<video src="${escapeHtml(getItemSrc(m.filename))}" muted style="width:100%;height:100%;object-fit:cover"></video>`:`<img src="${escapeHtml(getItemSrc(m.filename))}" style="width:100%;height:100%;object-fit:cover">`}
+                        ${m.type==='video'?`<video src="${escapeHtml(getItemSrc(m.filename))}" muted style="width:100%;height:100%;object-fit:cover"></video>`:`<img src="${escapeHtml(getItemSrc(m.filename))}" decoding="async" style="width:100%;height:100%;object-fit:cover">`}
                     </div>
                     <p class="text-muted text-truncate mb-1" style="font-size:10px">${escapeHtml(m.album)} · ${new Date(m.date).toLocaleDateString()}</p>
                     <button class="btn btn-sm chip border-0" onclick='keepOnlyDuplicate("exact", ${gi}, ${jsAttr(m.filename)})'>Keep this, trash rest</button>
@@ -2812,7 +3488,7 @@ function renderDuplicatesBody(){
             ${group.map(m => `
                 <div class="col text-center">
                     <div class="rounded-3 overflow-hidden mb-2 bg-body-secondary" style="aspect-ratio:1/1">
-                        <img src="${escapeHtml(getItemSrc(m.filename))}" style="width:100%;height:100%;object-fit:cover">
+                        <img src="${escapeHtml(getItemSrc(m.filename))}" decoding="async" style="width:100%;height:100%;object-fit:cover">
                     </div>
                     <p class="text-muted text-truncate mb-1" style="font-size:10px">${escapeHtml(m.album)} · ${new Date(m.date).toLocaleDateString()}</p>
                     <button class="btn btn-sm chip border-0" onclick='keepOnlyDuplicate("near", ${gi}, ${jsAttr(m.filename)})'>Keep this, trash rest</button>
@@ -2837,7 +3513,7 @@ function keepOnlyDuplicate(kind, groupIndex, keepFilename){
 function hiddenPortalViewHTML(){
     const hiddenNames = Object.keys(state.hiddenAlbums);
     let html = `<div class="animate-enter pb-5">
-    <div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="backdrop-filter:blur(16px);border-color:rgba(217,180,110,.4)!important">
+    <div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="backdrop-filter:blur(10px);border-color:rgba(217,180,110,.4)!important">
         <div class="d-flex align-items-center gap-3">
             <button class="icon-btn" onclick="setActiveView('people')"><i class="fa-solid fa-arrow-left small"></i></button>
             <h2 class="h6 fw-bold mb-0"><i class="fa-solid fa-crown text-warning me-2"></i>Hidden Vault</h2>
@@ -2857,7 +3533,7 @@ function hiddenPortalViewHTML(){
             const count = getAlbumPhotoCount(name);
             const isUnlocked = state.unlockedHidden.has(name);
             const preview = isUnlocked
-                ? `<img src="${escapeHtml(getThumbUrl(name))}" alt="${escapeHtml(name)}" class="img-loading" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onload="this.classList.add('img-loaded')" onerror="this.style.display='none'">`
+                ? `<img src="${escapeHtml(getThumbUrl(name))}" alt="${escapeHtml(name)}" class="img-loading" decoding="async" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" onload="this.classList.add('img-loaded')" onerror="this.style.display='none'">`
                 : `<div style="position:absolute;inset:0;background:linear-gradient(135deg,#2e1b4b,#1a0f2b);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-lock fs-1" style="color:rgba(252,211,77,.3)"></i></div>`;
             html += `<div class="col"><div class="bg-body rounded-4 shadow-sm overflow-hidden border" style="border-color:rgba(217,180,110,.5)!important">
                 <div class="position-relative bg-body-secondary" style="aspect-ratio:4/3;cursor:pointer" onclick='${isUnlocked?`showAlbum(${jsAttr(name)});setActiveView('gallery')`:`promptUnlockAlbum(${jsAttr(name)})`}'>
@@ -2892,28 +3568,32 @@ function hiddenPortalViewHTML(){
    ====================================================================== */
 function audioViewHTML(){
     let html = `<div class="animate-enter pb-5">
-    <div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between" style="backdrop-filter:blur(16px);border-color:rgba(217,180,110,.4)!important">
+    <div class="sticky-bar mb-4"><div class="bg-body bg-opacity-75 border shadow rounded-4 p-3 d-flex align-items-center justify-content-between flex-wrap gap-2" style="backdrop-filter:blur(10px);border-color:rgba(217,180,110,.4)!important">
         <div class="d-flex align-items-center gap-3">
             <button class="icon-btn" onclick="setActiveView('people')"><i class="fa-solid fa-arrow-left small"></i></button>
             <h2 class="h6 fw-bold mb-0"><i class="fa-solid fa-headphones text-success me-2"></i>Audio Library</h2>
         </div>
-        <span class="chip">${state.uploadedAudio.length} tracks</span>
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm chip border-0" onclick="toggleAudioSort()"><i class="fa-solid fa-arrow-down-a-z me-1"></i>${state.audioSortOrder==='date'?'Newest':'A-Z'}</button>
+            <span class="chip">${state.uploadedAudio.length} tracks</span>
+        </div>
     </div></div>`;
     if(state.uploadedAudio.length===0){
-        html += `<div class="text-center py-5"><div class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px"><i class="fa-solid fa-music fs-2 text-muted"></i></div><p class="text-muted fw-medium">No audio files yet.</p></div>`;
+        html += `<div class="text-center py-5"><div class="rounded-circle bg-body-secondary d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px"><i class="fa-solid fa-music fs-2 text-muted"></i></div><p class="text-muted fw-medium mb-2">No audio files yet.</p><p class="small text-muted">Tip: you can also extract audio from any video — open a video and look for the "Extract Audio" option.</p></div>`;
     } else {
         html += `<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">`;
-        state.uploadedAudio.forEach(audio => {
+        getSortedAudioList().forEach(audio => {
             const isCur = state.currentAudioId===audio.id;
-            html += `<div class="col"><div class="bg-body bg-opacity-75 rounded-4 p-3 shadow-sm border" style="border-color:rgba(217,180,110,.4)!important">
+            html += `<div class="col"><div class="bg-body bg-opacity-75 rounded-4 p-3 shadow-sm border" style="border-color:${isCur?'rgba(180,83,9,.6)':'rgba(217,180,110,.4)'}!important">
                 <div class="d-flex align-items-center gap-3">
                     <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:rgba(5,150,105,.12);color:#059669"><i class="fa-solid fa-music"></i></div>
-                    <div class="flex-grow-1 text-truncate">
+                    <div class="flex-grow-1 text-truncate" style="cursor:pointer" onclick='audioListPlayToggle(${jsAttr(audio.id)})'>
                         <p class="fw-medium text-truncate mb-0">${escapeHtml(audio.name)}</p>
                         <p class="text-muted small mb-0">${new Date(audio.date).toLocaleDateString()} · ${(audio.size/1024/1024).toFixed(1)} MB</p>
                     </div>
                     <div class="d-flex gap-1">
                         <button class="icon-btn" style="background:#b45309;color:#fff" onclick='audioListPlayToggle(${jsAttr(audio.id)})'><i class="fa-solid ${isCur&&state.audioPlaying?'fa-pause':'fa-play'}"></i></button>
+                        <button class="icon-btn tooltip-lbl" aria-label="Download" style="background:rgba(5,150,105,.15);color:#059669" onclick='downloadAudioById(${jsAttr(audio.id)})'><i class="fa-solid fa-download"></i></button>
                         <button class="icon-btn" style="background:#e11d48;color:#fff" onclick='confirmDeleteAudio(${jsAttr(audio.id)})'><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>
@@ -2929,6 +3609,7 @@ function audioViewHTML(){
     html += `</div>`;
     return html;
 }
+function audioViewInit(){}
 function audioListPlayToggle(id){
     const audio = state.uploadedAudio.find(a=>a.id===id); if(!audio) return;
     if(state.currentAudioId===id && state.audioPlaying) pauseAudio();
@@ -2943,39 +3624,49 @@ function confirmDeleteAudio(id){ document.getElementById(`audio-confirm-${id}`).
    ====================================================================== */
 async function init(){
     applyTheme();
-
     try{
-        const [fileRes, thumbRes] = await Promise.all([
-            fetch('data.json').catch(()=>({json:()=>[]})),
-            fetch('thumbnails.json').catch(()=>({json:()=>({})}))
+        const [fileRes, thumbRes, mediaRes, trashRes, thumbsRes, audioRes] = await Promise.allSettled([
+            fetch('data.json').then(r=>r.json()),
+            fetch('thumbnails.json').then(r=>r.json()),
+            getAllFromStore(STORE_MEDIA),
+            getAllFromStore(STORE_TRASH),
+            getAllFromStore(STORE_THUMBS),
+            getAllAudio()
         ]);
-        state.rawFileList = [...new Set(await fileRes.json())];
-        state.thumbnailMap = await thumbRes.json();
-    }catch{ state.rawFileList=[]; state.thumbnailMap={}; }
+        state.rawFileList = (fileRes.status==='fulfilled' && Array.isArray(fileRes.value)) ? [...new Set(fileRes.value)] : [];
+        state.thumbnailMap = (thumbRes.status==='fulfilled' && thumbRes.value && typeof thumbRes.value==='object' && !Array.isArray(thumbRes.value)) ? thumbRes.value : {};
+        state.uploadedMedia = (mediaRes.status==='fulfilled' && Array.isArray(mediaRes.value)) ? mediaRes.value : [];
+        state.deletedMedia = (trashRes.status==='fulfilled' && Array.isArray(trashRes.value)) ? trashRes.value : [];
+        const thumbList = (thumbsRes.status==='fulfilled' && Array.isArray(thumbsRes.value)) ? thumbsRes.value : [];
+        state.uploadedThumbnails = {}; thumbList.forEach(t=>{ if(t && t.album) state.uploadedThumbnails[t.album]=t.dataURL; });
+        state.uploadedAudio = (audioRes.status==='fulfilled' && Array.isArray(audioRes.value)) ? audioRes.value : [];
+        computePeopleData();
+        checkStorageQuota();
+    }catch(e){
+        console.error('Startup data load failed:', e);
+        state.rawFileList = state.rawFileList || [];
+        state.thumbnailMap = state.thumbnailMap || {};
+        state.uploadedMedia = state.uploadedMedia || [];
+        state.deletedMedia = state.deletedMedia || [];
+        state.uploadedThumbnails = state.uploadedThumbnails || {};
+        state.uploadedAudio = state.uploadedAudio || [];
+    }
 
-    try{
-        state.uploadedMedia = await getAllFromStore(STORE_MEDIA) || [];
-        state.deletedMedia = await getAllFromStore(STORE_TRASH) || [];
-        const thumbs = await getAllFromStore(STORE_THUMBS) || [];
-        state.uploadedThumbnails = {}; thumbs.forEach(t=>state.uploadedThumbnails[t.album]=t.dataURL);
-        state.uploadedAudio = await getAllAudio() || [];
-    }catch{ state.uploadedMedia=[]; state.deletedMedia=[]; state.uploadedThumbnails={}; state.uploadedAudio=[]; }
-
-    computePeopleData();
-    checkStorageQuota();
-    document.getElementById('selectBtn').innerHTML = `<i class="fa-solid fa-check-double"></i>`;
-    document.getElementById('sortBtn').innerHTML = `<i class="fa-solid fa-arrow-down-a-z"></i>`;
+    const selectBtn = document.getElementById('selectBtn'); if(selectBtn) selectBtn.innerHTML = `<i class="fa-solid fa-check-double"></i>`;
+    const sortBtn = document.getElementById('sortBtn'); if(sortBtn) sortBtn.innerHTML = `<i class="fa-solid fa-arrow-down-a-z"></i>`;
 
     // Patch renderView so entering people/gallery views also runs the
     // targeted "shell built once, grid re-rendered on filter/search" init.
     const originalRenderView = renderView;
     window.renderView = function(){
-        originalRenderView();
+        try{ originalRenderView(); }catch(e){ console.error('Render failed:', e); }
         if(state.activeView==='people') peopleViewInit();
         else if(state.activeView==='gallery') galleryViewInit();
+        else if(state.activeView==='audio') audioViewInit();
     };
 
-    renderView();
+    try{ renderView(); }
+    catch(e){ console.error('Initial render failed:', e); showToast('Something went wrong loading the gallery — check the console for details.', 'error'); }
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
